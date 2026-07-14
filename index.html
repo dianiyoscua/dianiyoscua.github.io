@@ -11,7 +11,41 @@
             background-size: cover;
             /* Esta propiedad CSS es clave para el efecto pixelado */
             image-rendering: pixelated; 
+            margin: 0;<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Imagen a Pantalla Completa</title>
+    <style>
+        body, html {
+            /* Quitamos los márgenes por defecto del navegador */
             margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            
+            /* Configuramos la imagen como fondo */
+            background-image: url('foto.jpg');
+            
+            /* Hacemos que la imagen cubra toda la pantalla sin deformarse */
+            background-size: cover; 
+            
+            /* Mantenemos la imagen siempre centrada */
+            background-position: center center; 
+            
+            /* Evitamos que la imagen se repita si la pantalla es muy grande */
+            background-repeat: no-repeat; 
+            
+            /* Color de fondo oscuro por si la imagen tarda en cargar */
+            background-color: #000; 
+        }
+    </style>
+</head>
+<body>
+    <!-- El cuerpo de la web está vacío porque la imagen es el propio fondo -->
+</body>
+</html>
             padding: 0;
             cursor: crosshair;
         }
