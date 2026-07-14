@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fondo Espacial</title>
+    <title>Fondo Espacial Realista con Planetas y Rocas</title>
     <style>
         /* Reseteo para que ocupe toda la pantalla sin bordes ni scroll */
         body, html {
@@ -32,10 +32,56 @@
 
         let width, height;
         let stars = [];
+        let spaceObjects = [];
+        let assetsLoaded = false;
         
-        // Ajustes del efecto
-        const numStars = 800; // Cantidad de estrellas
-        const speed = 8;      // Velocidad
+        // ⚙️ CONFIGURACIÓN DEL EFECTO:
+        const config = {
+            numStars: 800,        // Cantidad de estrellas
+            baseSpeed: 8,         // Velocidad base
+            maxPlanets: 1,        // Máximo de planetas activos a la vez
+            maxAsteroids: 3,      // Máximo de asteroides activos a la vez
+            planetProb: 0.001,    // Probabilidad muy baja de aparición de planeta por frame
+            asteroidProb: 0.005,  // Probabilidad baja de aparición de asteroide por frame
+            planetBaseSize: 300,  // Tamaño proyectado máximo de un planeta
+            asteroidBaseSize: 30  // Tamaño proyectado máximo de un asteroide
+        };
+
+        // URLs de imágenes PNG reales con transparencia (de Wikimedia Commons)
+        const planetImagesUrls = [
+            'https://upload.wikimedia.org/wikipedia/commons/e/e0/Earth_from_Apollo_17.png', // Tierra
+            'https://upload.wikimedia.org/wikipedia/commons/d/d3/Jupiter_by_Cassini-Huygens.png', // Júpiter
+            'https://upload.wikimedia.org/wikipedia/commons/5/58/Mars_P_M354_with_names.png' // Marte
+        ];
+        const asteroidImagesUrls = [
+            'https://upload.wikimedia.org/wikipedia/commons/0/0e/433_Eros_color.png', // Asteroide Eros
+            'https://upload.wikimedia.org/wikipedia/commons/f/ff/asteroid-3081.png' // Asteroide 3081
+        ];
+
+        let planetImages = [];
+        let asteroidImages = [];
+
+        // Función para cargar imágenes
+        async function loadAssets() {
+            const loadPlanetImages = planetImagesUrls.map(url => {
+                return new Promise(resolve => {
+                    const img = new Image();
+                    img.src = url;
+                    img.onload = () => resolve(img);
+                });
+            });
+            const loadAsteroidImages = asteroidImagesUrls.map(url => {
+                return new Promise(resolve => {
+                    const img = new Image();
+                    img.src = url;
+                    img.onload = () => resolve(img);
+                });
+            });
+
+            planetImages = await Promise.all(loadPlanetImages);
+            asteroidImages = await Promise.all(loadAsteroidImages);
+            assetsLoaded = true;
+        }
 
         function resize() {
             width = window.innerWidth;
@@ -46,6 +92,7 @@
         window.addEventListener('resize', resize);
         resize();
 
+        // Clase original para estrellas (puntos/líneas)
         class Star {
             constructor() {
                 this.reset();
@@ -59,7 +106,7 @@
             }
 
             update() {
-                this.z -= speed;
+                this.z -= config.baseSpeed;
                 if (this.z <= 0) {
                     this.reset();
                     this.z = width;
@@ -87,24 +134,114 @@
             }
         }
 
-        for (let i = 0; i < numStars; i++) {
+        // Nueva clase para objetos espaciales complejos (imágenes)
+        class SpaceObject {
+            constructor(type, imagesArray) {
+                this.type = type;
+                this.imagesArray = imagesArray;
+                this.isActive = false;
+                // No reseteamos en el constructor, se activa bajo demanda
+            }
+
+            activate() {
+                this.x = (Math.random() - 0.5) * width * 4; // Mayor rango X para aparición
+                this.y = (Math.random() - 0.5) * height * 4; // Mayor rango Y
+                this.z = width + Math.random() * width * 2; // Aparecen más lejos
+                this.pz = this.z;
+                this.image = this.imagesArray[Math.floor(Math.random() * this.imagesArray.length)];
+                this.baseSize = (this.type === 'planet') ? config.planetBaseSize : config.asteroidBaseSize;
+                this.rotation = Math.random() * Math.PI * 2;
+                this.rotationSpeed = (Math.random() - 0.5) * 0.01; // Pequeña rotación aleatoria
+                this.isActive = true;
+            }
+
+            update() {
+                if (!this.isActive) return;
+                this.z -= config.baseSpeed; // Misma velocidad que estrellas
+                this.rotation += this.rotationSpeed;
+                if (this.z <= 0) {
+                    this.isActive = false; // Se desactiva al pasar
+                }
+            }
+
+            draw() {
+                if (!this.isActive || !this.image || !assetsLoaded) return;
+
+                let sx = (this.x / this.z) * (width / 2) + width / 2;
+                let sy = (this.y / this.z) * (height / 2) + height / 2;
+
+                // Tamaño escalado por perspectiva (el factor 300 es un ajuste para el tamaño base)
+                let size = (1 - this.z / width) * this.baseSize; 
+
+                // Solo dibujar si está en pantalla y tiene tamaño
+                if (size > 0) {
+                    ctx.save();
+                    ctx.translate(sx, sy);
+                    ctx.rotate(this.rotation);
+                    ctx.globalAlpha = 1 - (this.z / width); // Opacidad dinámica
+                    // Dibujar imagen centrada
+                    ctx.drawImage(this.image, -size / 2, -size / 2, size, size);
+                    ctx.restore();
+                }
+            }
+        }
+
+        // Inicialización de estrellas
+        for (let i = 0; i < config.numStars; i++) {
             stars.push(new Star());
         }
 
-        function animate() {
+        // Lógica de aparición de objetos
+        function attemptToSpawnObjects() {
+            // Contar activos
+            const activePlanets = spaceObjects.filter(obj => obj.type === 'planet' && obj.isActive).length;
+            const activeAsteroids = spaceObjects.filter(obj => obj.type === 'asteroid' && obj.isActive).length;
+
+            if (activePlanets < config.maxPlanets && Math.random() < config.planetProb) {
+                const newPlanet = new SpaceObject('planet', planetImages);
+                newPlanet.activate();
+                spaceObjects.push(newPlanet);
+            }
+            if (activeAsteroids < config.maxAsteroids && Math.random() < config.asteroidProb) {
+                const newAsteroid = new SpaceObject('asteroid', asteroidImages);
+                newAsteroid.activate();
+                spaceObjects.push(newAsteroid);
+            }
+        }
+
+        async function animate() {
+            // Esperar a que carguen las imágenes
+            if (!assetsLoaded) {
+                requestAnimationFrame(animate);
+                return;
+            }
+
             // El 0.4 crea el efecto de estela al no borrar el fondo por completo
             ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
             ctx.fillRect(0, 0, width, height);
 
+            // 1. Dibujar Estrellas (Fondo)
             stars.forEach(star => {
                 star.update();
                 star.draw();
             });
 
+            // 2. Lógica de aparición de objetos
+            attemptToSpawnObjects();
+
+            // 3. Dibujar Objetos (Por encima de estrellas)
+            // Filtrar objetos inactivos
+            spaceObjects = spaceObjects.filter(obj => obj.isActive);
+            spaceObjects.forEach(obj => {
+                obj.update();
+                obj.draw();
+            });
+
             requestAnimationFrame(animate);
         }
 
-        animate();
+        // Iniciar carga de activos y luego la animación
+        loadAssets().then(() => animate());
     </script>
 </body>
 </html>
