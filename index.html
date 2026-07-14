@@ -1,1 +1,83 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Pixel Perch: Lorikeet Study</title>
+    <style>
+        body {
+            /* Usamos la imagen original como fondo */
+            background-image: url('foto.jpg');
+            background-size: cover;
+            /* Esta propiedad CSS es clave para el efecto pixelado */
+            image-rendering: pixelated; 
+            margin: 0;
+            padding: 0;
+            cursor: crosshair;
+        }
 
+        .header-box {
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            font-family: 'Courier New', monospace;
+            padding: 20px;
+            width: 300px;
+            position: absolute;
+            top: 20px;
+            left: 20px;
+        }
+
+        .header-box h1 {
+            font-size: 20px;
+            margin-top: 0;
+        }
+
+        /* El elemento del lupa */
+        #pixel-magnifier {
+            width: 100px;
+            height: 100px;
+            border: 2px solid #ccc;
+            position: absolute;
+            background-image: url('_1098821.jpg');
+            background-repeat: no-repeat;
+            background-size: 400% 400%; /* Zoom 4x */
+            pointer-events: none; /* No interfiere con el puntero */
+            display: none; /* Oculto por defecto */
+        }
+    </style>
+</head>
+<body>
+    <div class="header-box">
+        <h1>THE PIXEL PERCH</h1>
+        <p>A Lorikeet Study</p>
+        <p>Mueve tu cursor para inspeccionar la cuadrícula de píxeles.</p>
+    </div>
+
+    <!-- El lupa -->
+    <div id="pixel-magnifier"></div>
+
+    <script>
+        const body = document.body;
+        const magnifier = document.getElementById('pixel-magnifier');
+
+        body.addEventListener('mousemove', (e) => {
+            magnifier.style.display = 'block';
+            
+            // Posicionamos el lupa centrado en el cursor
+            const x = e.clientX - 50;
+            const y = e.clientY - 50;
+            magnifier.style.left = x + 'px';
+            magnifier.style.top = y + 'px';
+            
+            // Calculamos la posición del fondo para el zoom (4x)
+            const zoomX = e.clientX * 4;
+            const zoomY = e.clientY * 4;
+            magnifier.style.backgroundPosition = `-${zoomX - 50}px -${zoomY - 50}px`;
+        });
+
+        body.addEventListener('mouseleave', () => {
+            magnifier.style.display = 'none';
+        });
+    </script>
+</body>
+</html>
