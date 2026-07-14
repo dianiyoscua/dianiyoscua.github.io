@@ -94,7 +94,6 @@
             transform: scale(1.05);
         }
 
-        /* Animación de error (temblor) */
         .error-shake {
             animation: shake 0.4s;
         }
@@ -108,7 +107,7 @@
         }
 
 
-        /* --- Paneles de información (Reloj, Fecha y Clima) --- */
+        /* --- Paneles de información --- */
         .info-panel {
             position: absolute;
             z-index: 3;
@@ -146,7 +145,7 @@
             border-radius: 20px;
             animation: fadeInText 4s ease-in forwards;
             opacity: 0;
-            display: none; /* Oculto hasta poner la contraseña */
+            display: none; 
         }
 
         @keyframes fadeInText {
@@ -164,7 +163,7 @@
             perspective: 1200px;
             width: 90%;
             max-width: 800px;
-            display: none; /* Oculto hasta poner la contraseña */
+            display: none; 
         }
 
         #numbers-wrapper::before {
@@ -273,7 +272,7 @@
         <div id="weather-display" class="panel-data">-- °C</div>
     </div>
 
-    <!-- Envoltorio y Jugada de la Bonoloto (Ocultos al inicio) -->
+    <!-- Envoltorio y Jugada de la Bonoloto -->
     <div id="numbers-wrapper">
         <div id="numbers-container"></div>
     </div>
@@ -289,34 +288,24 @@
             const securityScreen = document.getElementById('security-screen');
 
             if (password === 'mimisos') {
-                // Contraseña correcta: Desvanecer pantalla y mostrar números
                 securityScreen.style.opacity = '0';
-                
                 setTimeout(() => {
                     securityScreen.style.display = 'none';
                     document.getElementById('numbers-wrapper').style.display = 'block';
                     document.getElementById('info-text').style.display = 'block';
-                    
-                    // Disparamos la generación y la animación de los números AHORA
                     generateDateBasedBonoloto();
-                }, 500); // Espera medio segundo a que termine el desvanecimiento
+                }, 500); 
             } else {
-                // Contraseña incorrecta: Animación de temblor
                 securityBox.classList.add('error-shake');
-                input.value = ''; // Limpiamos el campo
-                
-                // Quitamos la clase de temblor rápido para que se pueda volver a activar si falla de nuevo
+                input.value = ''; 
                 setTimeout(() => {
                     securityBox.classList.remove('error-shake');
                 }, 400);
             }
         }
 
-        // Permitir enviar con la tecla Enter
         document.getElementById('password-input').addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') {
-                checkPassword();
-            }
+            if (e.key === 'Enter') checkPassword();
         });
 
 
@@ -332,33 +321,36 @@
         setInterval(updateClockAndDate, 1000);
         updateClockAndDate();
 
-        // --- 2. UBICACIÓN Y CLIMA ---
-        async function fetchWeatherAndLocation(lat, lon) {
+
+        // --- 2. UBICACIÓN Y CLIMA (NUEVO MÉTODO POR IP) ---
+        async function fetchWeatherAndLocation() {
             try {
-                const geoResponse = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
+                // Obtenemos la ubicación basada en la IP del usuario (sin pedir permisos)
+                const geoResponse = await fetch('https://get.geojs.io/v1/ip/geo.json');
                 const geoData = await geoResponse.json();
-                const city = geoData.address.city || geoData.address.town || geoData.address.village || geoData.address.state || "Ubicación detectada";
+                
+                const city = geoData.city || "Ubicación detectada";
+                const lat = geoData.latitude;
+                const lon = geoData.longitude;
+                
                 document.getElementById('location-display').innerText = city;
 
+                // Obtenemos el clima con esas coordenadas
                 const weatherResponse = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`);
                 const weatherData = await weatherResponse.json();
                 const temp = weatherData.current_weather.temperature;
+                
                 document.getElementById('weather-display').innerText = `${temp} °C`;
             } catch (error) {
-                document.getElementById('location-display').innerText = "Datos no disponibles";
+                // Si algo falla, mostramos esto en lugar de dejarlo cargando
+                document.getElementById('location-display').innerText = "Ubicación oculta";
                 document.getElementById('weather-display').innerText = "-- °C";
             }
         }
+        
+        // Ejecutamos la búsqueda al iniciar
+        fetchWeatherAndLocation();
 
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                (position) => fetchWeatherAndLocation(position.coords.latitude, position.coords.longitude),
-                (error) => {
-                    document.getElementById('location-display').innerText = "Permiso denegado";
-                    document.getElementById('weather-display').innerText = "Desconocido";
-                }
-            );
-        }
 
         // --- 3. LÓGICA DE BONOLOTO POR FECHA CON ANIMACIÓN ---
         function seededRandom(seed) {
@@ -399,16 +391,12 @@
             let htmlContent = '';
             combinacionOrdenada.forEach((num, index) => {
                 let numeroFormateado = num.toString().padStart(2, '0');
-                let delay = index * 0.3; // Retraso escalonado para la animación
+                let delay = index * 0.3; 
                 htmlContent += `<div class="number-ball" style="animation: ballMaterialize 1.5s cubic-bezier(0.2, 0.8, 0.2, 1) ${delay}s forwards;">${numeroFormateado}</div>`;
             });
 
             document.getElementById('numbers-container').innerHTML = htmlContent;
         }
-
-        // Nota: Ya NO llamamos a generateDateBasedBonoloto() aquí abajo.
-        // Ahora se llama solo cuando la contraseña es correcta en la función checkPassword()
-
 
         // --- 4. LÓGICA DEL FONDO ESPACIAL ---
         const canvas = document.getElementById('space');
@@ -416,7 +404,6 @@
 
         let width, height;
         let stars = [];
-        
         const numStars = 800;
         const speed = 8;
 
