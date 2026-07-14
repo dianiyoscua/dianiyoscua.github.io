@@ -86,7 +86,7 @@
         }
         #history-modal h3 { text-align: center; color: #00ffcc; margin-top: 0; }
         #history-list { list-style: none; padding: 0; max-height: 300px; overflow-y: auto; font-size: 0.9rem; }
-        #history-list li { padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        #history-list li { padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); text-align: center; font-size: 1.1rem; letter-spacing: 2px;}
         .close-btn { display: block; width: 100%; padding: 10px; margin-top: 15px; background: #333; color: #fff; border: none; cursor: pointer; }
 
         /* --- ZONA CENTRAL --- */
@@ -104,22 +104,14 @@
 
         /* DISEÑO DE BOLAS Y TEMPERATURAS */
         .number-ball {
-            width: 60px; height: 60px; display: flex; justify-content: center; align-items: center; flex-direction: column;
+            width: 60px; height: 60px; display: flex; justify-content: center; align-items: center;
             border-radius: 50%; font-size: 1.5rem; font-weight: bold; opacity: 0; backdrop-filter: blur(4px);
-            position: relative;
         }
         
-        /* Etiquetas C y R */
-        .ball-label { font-size: 0.6rem; position: absolute; top: -5px; background: rgba(0,0,0,0.8); padding: 2px 5px; border-radius: 10px; }
-
         /* Temperaturas */
         .ball-neutral { background: rgba(0, 0, 0, 0.7); border: 2px solid rgba(255, 255, 255, 0.4); color: #fff; box-shadow: 0 0 10px rgba(255,255,255,0.2); }
         .ball-hot { background: rgba(50, 10, 0, 0.8); border: 2px solid #ff4500; color: #ffd700; box-shadow: 0 0 15px #ff4500; }
         .ball-cold { background: rgba(0, 20, 50, 0.8); border: 2px solid #00bfff; color: #e0ffff; box-shadow: 0 0 15px #00bfff; }
-        
-        /* Extra */
-        .ball-comp { background: rgba(50, 50, 0, 0.9); border: 2px solid #ffd700; color: #fff; box-shadow: 0 0 20px #ffd700; }
-        .ball-reint { background: rgba(80, 0, 0, 0.9); border: 2px solid #ff0000; color: #fff; box-shadow: 0 0 20px #ff0000; }
 
         #info-text {
             color: rgba(255,255,255,0.7); font-size: 0.9rem; text-align: center; background: rgba(0,0,0,0.6);
@@ -130,8 +122,6 @@
         /* ANIMACIONES */
         @keyframes fadeInText { 80% { opacity: 0; } 100% { opacity: 1; } }
         @keyframes containerFlyIn { 0% { transform: translateZ(-2000px) scale(0.1); } 100% { transform: translateZ(0) scale(1); } }
-        
-        /* Animación dinámica de materialización inyectada por JS */
         @keyframes ballMaterializeNeutral { 0% { opacity: 0; transform: scale(0) rotate(720deg); } 100% { opacity: 1; transform: scale(1) rotate(0deg); } }
 
         /* MÓVIL */
@@ -184,7 +174,7 @@
         <div id="center-stage">
             <div id="numbers-wrapper"><div id="numbers-container"></div></div>
             <div id="info-text">Jugada para el: <span id="next-draw-date"></span><br>
-                <span style="font-size:0.75rem; color:#aaa;">(Naranja=Caliente | Azul=Frío | C=Comp | R=Reint)</span>
+                <span style="font-size:0.75rem; color:#aaa;">(Naranja = Caliente | Azul = Frío | Blanco = Neutro)</span>
             </div>
         </div>
     </div>
@@ -199,11 +189,10 @@
             if (soundEnabled) {
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                 
-                // Ruido ambiental de motor de nave
                 const osc = audioCtx.createOscillator();
                 const gain = audioCtx.createGain();
                 osc.type = 'triangle';
-                osc.frequency.value = 60; // Frecuencia muy grave
+                osc.frequency.value = 60; 
                 gain.gain.value = 0.15;
                 osc.connect(gain);
                 gain.connect(audioCtx.destination);
@@ -211,7 +200,7 @@
             }
         }
 
-        function playSwoosh(delaySecs, isSpecial = false) {
+        function playSwoosh(delaySecs) {
             if (!soundEnabled || !audioCtx) return;
             setTimeout(() => {
                 const osc = audioCtx.createOscillator();
@@ -219,8 +208,8 @@
                 osc.connect(gain);
                 gain.connect(audioCtx.destination);
                 
-                osc.type = isSpecial ? 'square' : 'sine';
-                osc.frequency.setValueAtTime(isSpecial ? 1200 : 800, audioCtx.currentTime);
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(800, audioCtx.currentTime);
                 osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.4);
                 
                 gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
@@ -270,7 +259,7 @@
         }
         fetchWeatherAndLocation();
 
-        // --- MOTOR BONOLOTO (TEMPERATURAS, COMP, REINT, HISTORIAL) ---
+        // --- MOTOR BONOLOTO (6 NÚMEROS) ---
         function seededRandom(seed) { let x = Math.sin(seed++) * 10000; return x - Math.floor(x); }
 
         function generateDateBasedBonoloto() {
@@ -290,7 +279,6 @@
                 else pool.push(i, i); 
             }
 
-            // 1. Extraer 6 números principales
             let combinacion = new Set(); 
             while (combinacion.size < 6) {
                 seed++;
@@ -298,18 +286,9 @@
             }
             let ordenados = Array.from(combinacion).sort((a, b) => a - b);
 
-            // 2. Extraer Complementario (que no esté en los 6 principales)
-            let comp;
-            do { seed++; comp = Math.floor(seededRandom(seed) * 49) + 1; } while (combinacion.has(comp));
-
-            // 3. Extraer Reintegro (0-9)
-            seed++; let reint = Math.floor(seededRandom(seed) * 10);
-
-            // 4. Generar HTML y Sonidos
             let htmlContent = '';
             let currentDelay = 0;
 
-            // Renderizar las 6 bolas
             ordenados.forEach(num => {
                 let tempClass = calientes.includes(num) ? 'ball-hot' : (frios.includes(num) ? 'ball-cold' : 'ball-neutral');
                 htmlContent += `<div class="number-ball ${tempClass}" style="animation: ballMaterializeNeutral 1s cubic-bezier(0.2, 0.8, 0.2, 1) ${currentDelay}s forwards;">${num.toString().padStart(2, '0')}</div>`;
@@ -317,31 +296,16 @@
                 currentDelay += 0.4;
             });
 
-            // Pausa dramática
-            currentDelay += 0.5;
-
-            // Renderizar Complementario
-            htmlContent += `<div class="number-ball ball-comp" style="animation: ballMaterializeNeutral 1s cubic-bezier(0.2, 0.8, 0.2, 1) ${currentDelay}s forwards;"><span class="ball-label">C</span>${comp.toString().padStart(2, '0')}</div>`;
-            playSwoosh(currentDelay, true);
-            currentDelay += 0.6;
-
-            // Renderizar Reintegro
-            htmlContent += `<div class="number-ball ball-reint" style="animation: ballMaterializeNeutral 1s cubic-bezier(0.2, 0.8, 0.2, 1) ${currentDelay}s forwards;"><span class="ball-label">R</span>${reint}</div>`;
-            playSwoosh(currentDelay, true);
-
             document.getElementById('numbers-container').innerHTML = htmlContent;
-
-            // 5. Guardar en Bitácora
-            saveToHistory(drawDate, ordenados, comp, reint);
+            saveToHistory(drawDate, ordenados);
         }
 
-        // --- SISTEMA DE BITÁCORA (LocalStorage) ---
-        function saveToHistory(date, nums, c, r) {
+        // --- SISTEMA DE BITÁCORA ---
+        function saveToHistory(date, nums) {
             let history = JSON.parse(localStorage.getItem('bonoHistory')) || [];
-            // Comprobar si ya existe esa fecha
             if (!history.find(h => h.date === date)) {
-                history.unshift({ date, nums, c, r }); // Añadir al principio
-                if (history.length > 10) history.pop(); // Mantener solo las últimas 10
+                history.unshift({ date, nums }); 
+                if (history.length > 10) history.pop(); 
                 localStorage.setItem('bonoHistory', JSON.stringify(history));
             }
         }
@@ -355,43 +319,38 @@
                 list.innerHTML = '<li>Sin registros aún.</li>';
             } else {
                 history.forEach(h => {
-                    list.innerHTML += `<li><strong>${h.date}</strong>: ${h.nums.join('-')} | C:${h.c} R:${h.r}</li>`;
+                    list.innerHTML += `<li><strong style="color:#aaa; font-size:0.8rem; display:block; margin-bottom:5px;">${h.date}</strong> ${h.nums.join(' - ')}</li>`;
                 });
             }
             document.getElementById('history-modal').style.display = 'block';
         }
-
 
         // --- FONDO ESPACIAL INTERACTIVO (PARALLAX) ---
         const canvas = document.getElementById('space');
         const ctx = canvas.getContext('2d');
         let width, height;
         let stars = [];
-        
-        // Variables de Parallax
         let mouseX = 0, mouseY = 0;
 
         function resize() { width = window.innerWidth; height = window.innerHeight; canvas.width = width; canvas.height = height; }
         window.addEventListener('resize', resize); resize();
 
-        // Detectar ratón en PC
         window.addEventListener('mousemove', e => {
-            mouseX = (e.clientX - width / 2) * 0.2; // Sensibilidad
+            mouseX = (e.clientX - width / 2) * 0.2; 
             mouseY = (e.clientY - height / 2) * 0.2;
         });
 
-        // Detectar giroscopio en móviles
         window.addEventListener('deviceorientation', e => {
             if(e.gamma !== null) {
                 mouseX = e.gamma * 2; 
-                mouseY = (e.beta - 45) * 2; // Ajuste para cuando se sostiene en ángulo
+                mouseY = (e.beta - 45) * 2; 
             }
         });
 
         class Star {
             constructor() { this.reset(); }
             reset() {
-                this.x = (Math.random() - 0.5) * width * 3; // Área más grande para compensar el movimiento
+                this.x = (Math.random() - 0.5) * width * 3; 
                 this.y = (Math.random() - 0.5) * height * 3;
                 this.z = Math.random() * width;
                 this.pz = this.z;
@@ -401,7 +360,6 @@
                 if (this.z <= 0) { this.reset(); this.z = width; this.pz = this.z; }
             }
             draw() {
-                // Aplicar el desvío del Parallax al centro geométrico
                 let centerX = (width / 2) + mouseX;
                 let centerY = (height / 2) + mouseY;
 
