@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fondo Espacial Realista</title>
     <style>
-        /* Reseteo para que ocupe toda la pantalla sin bordes ni scroll */
         body, html {
             margin: 0;
             padding: 0;
@@ -14,7 +13,6 @@
             overflow: hidden;
             background-color: #000;
         }
-        
         canvas {
             display: block;
             width: 100vw;
@@ -37,56 +35,55 @@
         
         // ⚙️ CONFIGURACIÓN DEL EFECTO:
         const config = {
-            numStars: 800,        // Cantidad de estrellas (puntos de luz)
-            baseSpeed: 8,         // Velocidad base del viaje
-            maxPlanets: 1,        // Máximo de planetas en pantalla a la vez
-            maxAsteroids: 3,      // Máximo de asteroides en pantalla a la vez
-            planetProb: 0.001,    // Probabilidad de que aparezca un planeta
-            asteroidProb: 0.005,  // Probabilidad de que aparezca un asteroide
-            planetBaseSize: 300,  // Tamaño base máximo de un planeta
-            asteroidBaseSize: 50  // Tamaño base máximo de un asteroide
+            numStars: 800,        
+            baseSpeed: 8,         
+            maxPlanets: 1,        
+            maxAsteroids: 3,      
+            planetProb: 0.001,    
+            asteroidProb: 0.005,  
+            planetBaseSize: 300,  
+            asteroidBaseSize: 50  
         };
 
-        // URLs de imágenes PNG reales con fondo transparente (Wikimedia Commons)
         const planetImagesUrls = [
-            'https://upload.wikimedia.org/wikipedia/commons/2/22/Earth_Western_Hemisphere_transparent_background.png', // Tierra
-            'https://upload.wikimedia.org/wikipedia/commons/e/e2/Jupiter.png', // Júpiter
-            'https://upload.wikimedia.org/wikipedia/commons/0/02/OSIRIS_Mars_true_color.png' // Marte
+            'https://upload.wikimedia.org/wikipedia/commons/2/22/Earth_Western_Hemisphere_transparent_background.png',
+            'https://upload.wikimedia.org/wikipedia/commons/e/e2/Jupiter.png',
+            'https://upload.wikimedia.org/wikipedia/commons/0/02/OSIRIS_Mars_true_color.png'
         ];
         
         const asteroidImagesUrls = [
-            'https://upload.wikimedia.org/wikipedia/commons/a/a2/Asteroid_Bennu_mosaic.png', // Asteroide Bennu
-            'https://upload.wikimedia.org/wikipedia/commons/d/d4/Vesta_in_natural_color.png' // Asteroide Vesta
+            'https://upload.wikimedia.org/wikipedia/commons/a/a2/Asteroid_Bennu_mosaic.png',
+            'https://upload.wikimedia.org/wikipedia/commons/d/d4/Vesta_in_natural_color.png'
         ];
 
         let planetImages = [];
         let asteroidImages = [];
 
-        // Función para cargar las imágenes antes de iniciar la animación
+        // Nueva carga de imágenes a prueba de fallos
         async function loadAssets() {
-            const loadPlanetImages = planetImagesUrls.map(url => {
-                return new Promise(resolve => {
-                    const img = new Image();
-                    img.crossOrigin = "Anonymous"; // Evita problemas de CORS
-                    img.src = url;
-                    img.onload = () => resolve(img);
-                });
-            });
-            const loadAsteroidImages = asteroidImagesUrls.map(url => {
+            const loadImage = (url) => {
                 return new Promise(resolve => {
                     const img = new Image();
                     img.crossOrigin = "Anonymous";
                     img.src = url;
                     img.onload = () => resolve(img);
+                    img.onerror = () => resolve(null); // Si falla, devuelve null para no trabar el sistema
                 });
-            });
+            };
 
-            planetImages = await Promise.all(loadPlanetImages);
-            asteroidImages = await Promise.all(loadAsteroidImages);
-            assetsLoaded = true;
+            const loadedPlanets = await Promise.all(planetImagesUrls.map(loadImage));
+            const loadedAsteroids = await Promise.all(asteroidImagesUrls.map(loadImage));
+
+            // Filtramos los null por si alguna imagen falló
+            planetImages = loadedPlanets.filter(img => img !== null);
+            asteroidImages = loadedAsteroids.filter(img => img !== null);
+            
+            // Solo activamos los objetos si cargó al menos una imagen
+            if (planetImages.length > 0 || asteroidImages.length > 0) {
+                assetsLoaded = true;
+            }
         }
 
-        // Ajusta el canvas al tamaño de la pantalla
         function resize() {
             width = window.innerWidth;
             height = window.innerHeight;
@@ -96,19 +93,14 @@
         window.addEventListener('resize', resize);
         resize();
 
-        // Clase que maneja el efecto de las estrellas (líneas blancas)
         class Star {
-            constructor() {
-                this.reset();
-            }
-
+            constructor() { this.reset(); }
             reset() {
                 this.x = (Math.random() - 0.5) * width * 2;
                 this.y = (Math.random() - 0.5) * height * 2;
                 this.z = Math.random() * width; 
                 this.pz = this.z; 
             }
-
             update() {
                 this.z -= config.baseSpeed;
                 if (this.z <= 0) {
@@ -117,15 +109,12 @@
                     this.pz = this.z;
                 }
             }
-
             draw() {
                 let sx = (this.x / this.z) * (width / 2) + width / 2;
                 let sy = (this.y / this.z) * (height / 2) + height / 2;
-
                 let px = (this.x / this.pz) * (width / 2) + width / 2;
                 let py = (this.y / this.pz) * (height / 2) + height / 2;
                 this.pz = this.z;
-
                 let r = (1 - this.z / width) * 3;
                 let alpha = 1 - this.z / width;
 
@@ -138,45 +127,31 @@
             }
         }
 
-        // Clase que maneja las imágenes de planetas y asteroides
         class SpaceObject {
             constructor(type, imagesArray) {
                 this.type = type;
                 this.imagesArray = imagesArray;
                 this.isActive = false;
             }
-
             activate() {
-                // Posición inicial aleatoria (más lejos y amplia)
                 this.x = (Math.random() - 0.5) * width * 3; 
                 this.y = (Math.random() - 0.5) * height * 3; 
                 this.z = width + Math.random() * width; 
                 this.pz = this.z;
-                
-                // Asigna imagen y tamaño según el tipo
                 this.image = this.imagesArray[Math.floor(Math.random() * this.imagesArray.length)];
                 this.baseSize = (this.type === 'planet') ? config.planetBaseSize : config.asteroidBaseSize;
-                
-                // Rotación inicial y velocidad de giro
                 this.rotation = Math.random() * Math.PI * 2;
                 this.rotationSpeed = (Math.random() - 0.5) * 0.005; 
                 this.isActive = true;
             }
-
             update() {
                 if (!this.isActive) return;
                 this.z -= config.baseSpeed;
                 this.rotation += this.rotationSpeed;
-                
-                // Si nos sobrepasa, se desactiva
-                if (this.z <= 0) {
-                    this.isActive = false; 
-                }
+                if (this.z <= 0) this.isActive = false; 
             }
-
             draw() {
-                if (!this.isActive || !this.image || !assetsLoaded) return;
-
+                if (!this.isActive || !this.image) return;
                 let sx = (this.x / this.z) * (width / 2) + width / 2;
                 let sy = (this.y / this.z) * (height / 2) + height / 2;
                 let size = (1 - this.z / width) * this.baseSize; 
@@ -192,60 +167,55 @@
             }
         }
 
-        // Crear las estrellas iniciales
         for (let i = 0; i < config.numStars; i++) {
             stars.push(new Star());
         }
 
-        // Controla cuándo aparecen nuevos planetas o asteroides
         function attemptToSpawnObjects() {
+            if (!assetsLoaded) return; // Si no hay imágenes, no genera objetos
+            
             const activePlanets = spaceObjects.filter(obj => obj.type === 'planet' && obj.isActive).length;
             const activeAsteroids = spaceObjects.filter(obj => obj.type === 'asteroid' && obj.isActive).length;
 
-            if (activePlanets < config.maxPlanets && Math.random() < config.planetProb) {
+            if (activePlanets < config.maxPlanets && Math.random() < config.planetProb && planetImages.length > 0) {
                 const newPlanet = new SpaceObject('planet', planetImages);
                 newPlanet.activate();
                 spaceObjects.push(newPlanet);
             }
-            if (activeAsteroids < config.maxAsteroids && Math.random() < config.asteroidProb) {
+            if (activeAsteroids < config.maxAsteroids && Math.random() < config.asteroidProb && asteroidImages.length > 0) {
                 const newAsteroid = new SpaceObject('asteroid', asteroidImages);
                 newAsteroid.activate();
                 spaceObjects.push(newAsteroid);
             }
         }
 
-        // Bucle principal de animación
+        // Ahora la animación arranca inmediatamente
         function animate() {
-            if (!assetsLoaded) {
-                requestAnimationFrame(animate);
-                return;
-            }
-
-            // Fondo negro con opacidad para crear el rastro de las estrellas
             ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
             ctx.fillRect(0, 0, width, height);
 
-            // Dibujar estrellas
+            // Siempre dibuja las estrellas
             stars.forEach(star => {
                 star.update();
                 star.draw();
             });
 
-            // Intentar generar nuevos planetas/rocas
-            attemptToSpawnObjects();
-
-            // Dibujar planetas y rocas, filtrando los inactivos
-            spaceObjects = spaceObjects.filter(obj => obj.isActive);
-            spaceObjects.forEach(obj => {
-                obj.update();
-                obj.draw();
-            });
+            // Si las imágenes cargaron, genera y dibuja planetas
+            if (assetsLoaded) {
+                attemptToSpawnObjects();
+                spaceObjects = spaceObjects.filter(obj => obj.isActive);
+                spaceObjects.forEach(obj => {
+                    obj.update();
+                    obj.draw();
+                });
+            }
 
             requestAnimationFrame(animate);
         }
 
-        // Iniciar la carga de imágenes y, al terminar, arrancar la animación
-        loadAssets().then(() => animate());
+        // Lanzamos la carga de imágenes en segundo plano y la animación al mismo tiempo
+        loadAssets();
+        animate();
     </script>
 </body>
 </html>
