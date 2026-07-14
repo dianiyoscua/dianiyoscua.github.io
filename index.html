@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>we love you glu glu</title>
+    <title>Predicción Bonoloto Espacial</title>
     <style>
         body, html {
             margin: 0;
@@ -13,6 +13,7 @@
             overflow: hidden;
             background-color: #000;
             font-family: 'Courier New', Courier, monospace; 
+            color: rgba(255, 255, 255, 0.85); /* Color estrella apagada */
         }
         
         canvas {
@@ -25,6 +26,43 @@
             z-index: 1;
         }
 
+        /* Paneles de información (Esquinas) */
+        .info-panel {
+            position: absolute;
+            z-index: 3;
+            padding: 15px 20px;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            backdrop-filter: blur(3px);
+            text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+        }
+
+        #top-left-panel {
+            top: 20px;
+            left: 20px;
+        }
+
+        #top-right-panel {
+            top: 20px;
+            right: 20px;
+            text-align: right;
+        }
+
+        .panel-title {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.5);
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .panel-data {
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        /* Contenedor central de los números */
         #numbers-container {
             position: absolute;
             top: 50%;
@@ -63,64 +101,150 @@
             box-shadow: 0 0 20px rgba(0, 255, 204, 0.5);
         }
 
-        /* Pequeño texto informativo */
         #info-text {
             position: absolute;
             top: 65%;
             left: 50%;
             transform: translate(-50%, -50%);
             z-index: 2;
-            color: rgba(255,255,255,0.5);
+            color: rgba(255,255,255,0.6);
             font-size: 0.9rem;
             text-align: center;
+            background: rgba(0,0,0,0.5);
+            padding: 5px 15px;
+            border-radius: 20px;
         }
     </style>
 </head>
 <body>
 
+    <!-- Fondo de estrellas -->
     <canvas id="space"></canvas>
 
+    <!-- Panel Superior Izquierdo: Fecha y Reloj -->
+    <div id="top-left-panel" class="info-panel">
+        <div class="panel-title">Fecha Local</div>
+        <div id="date-display" class="panel-data">Cargando...</div>
+        <div style="margin-top: 10px;"></div>
+        <div class="panel-title">Reloj Local</div>
+        <div id="time-display" class="panel-data">--:--:--</div>
+    </div>
+
+    <!-- Panel Superior Derecho: Ubicación y Clima -->
+    <div id="top-right-panel" class="info-panel">
+        <div class="panel-title">Ubicación</div>
+        <div id="location-display" class="panel-data">Buscando...</div>
+        <div style="margin-top: 10px;"></div>
+        <div class="panel-title">Clima Actual</div>
+        <div id="weather-display" class="panel-data">-- °C</div>
+    </div>
+
+    <!-- Jugada de la Bonoloto -->
     <div id="numbers-container"></div>
-    <div id="info-text">Generado usando pesos de frecuencia histórica de la Bonoloto</div>
+    <div id="info-text">Jugada probabilística calculada para el próximo sorteo: <span id="next-draw-date"></span></div>
 
     <script>
-        // --- 1. LÓGICA DE PROBABILIDAD PONDERADA ---
-        function generateWeightedBonoloto() {
-            const container = document.getElementById('numbers-container');
+        // --- 1. RELOJ Y FECHA ---
+        function updateClockAndDate() {
+            const now = new Date();
             
-            // Datos históricos aproximados de la Bonoloto
+            // Fecha
+            const dateOptions = { weekday: 'long', year: 'numeric', month: '2-digit', day: '2-digit' };
+            const formattedDate = now.toLocaleDateString('es-ES', dateOptions);
+            document.getElementById('date-display').innerText = formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1);
+
+            // Reloj
+            const timeOptions = { hour: '2-digit', minute: '2-digit', second: '2-digit' };
+            document.getElementById('time-display').innerText = now.toLocaleTimeString('es-ES', timeOptions);
+        }
+        setInterval(updateClockAndDate, 1000);
+        updateClockAndDate();
+
+
+        // --- 2. UBICACIÓN Y CLIMA (Usando APIs gratuitas) ---
+        async function fetchWeatherAndLocation(lat, lon) {
+            try {
+                // Obtener ciudad con Nominatim (OpenStreetMap)
+                const geoResponse = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
+                const geoData = await geoResponse.json();
+                const city = geoData.address.city || geoData.address.town || geoData.address.village || geoData.address.state || "Ubicación detectada";
+                document.getElementById('location-display').innerText = city;
+
+                // Obtener clima con Open-Meteo
+                const weatherResponse = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`);
+                const weatherData = await weatherResponse.json();
+                const temp = weatherData.current_weather.temperature;
+                document.getElementById('weather-display').innerText = `${temp} °C`;
+            } catch (error) {
+                document.getElementById('location-display').innerText = "Datos no disponibles";
+                document.getElementById('weather-display').innerText = "-- °C";
+            }
+        }
+
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    fetchWeatherAndLocation(position.coords.latitude, position.coords.longitude);
+                },
+                (error) => {
+                    document.getElementById('location-display').innerText = "Permiso denegado";
+                    document.getElementById('weather-display').innerText = "Desconocido";
+                }
+            );
+        } else {
+            document.getElementById('location-display').innerText = "No soportado";
+        }
+
+
+        // --- 3. LÓGICA DE BONOLOTO POR FECHA ---
+        // Generador de números pseudoaleatorios basado en una semilla (Seed)
+        function seededRandom(seed) {
+            let x = Math.sin(seed++) * 10000;
+            return x - Math.floor(x);
+        }
+
+        function generateDateBasedBonoloto() {
+            // Obtenemos la fecha de mañana (próximo sorteo)
+            const today = new Date();
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+
+            // Mostramos la fecha del próximo sorteo en el texto inferior
+            const tomorrowStr = tomorrow.toLocaleDateString('es-ES');
+            document.getElementById('next-draw-date').innerText = tomorrowStr;
+
+            // Creamos una semilla matemática basada en el día, mes y año de mañana
+            // Ejemplo: 16 de Julio de 2026 -> Semilla: 20260716
+            let seed = (tomorrow.getFullYear() * 10000) + ((tomorrow.getMonth() + 1) * 100) + tomorrow.getDate();
+
+            // Datos históricos para ponderar
             const numerosCalientes = [33, 10, 34, 2, 22, 11, 23, 31, 3, 19];
             const numerosFrios = [43, 5, 8, 49, 13, 20, 27];
             
-            // Creamos una "urna" donde meteremos los números
             let pool = [];
-
-            // Llenamos la urna ajustando la probabilidad (cantidad de tickets)
             for (let i = 1; i <= 49; i++) {
                 if (numerosCalientes.includes(i)) {
-                    // Los calientes meten 4 tickets en la urna
-                    pool.push(i, i, i, i); 
+                    pool.push(i, i, i, i); // Más peso
                 } else if (numerosFrios.includes(i)) {
-                    // Los fríos solo meten 1 ticket en la urna
-                    pool.push(i);
+                    pool.push(i); // Menos peso
                 } else {
-                    // Los neutros meten 2 tickets en la urna
-                    pool.push(i, i);
+                    pool.push(i, i); // Neutro
                 }
             }
 
             let combinacion = new Set(); 
-
-            // Sacamos 6 bolas de la urna ponderada
+            
+            // Extraemos los números usando el generador de la fecha
             while (combinacion.size < 6) {
-                // Elegimos un índice al azar de nuestra urna
-                let indiceAleatorio = Math.floor(Math.random() * pool.length);
-                let numeroElegido = pool[indiceAleatorio];
+                // Altera la semilla ligeramente en cada iteración para sacar números distintos
+                seed += 1; 
+                let randomVal = seededRandom(seed);
+                let indiceElegido = Math.floor(randomVal * pool.length);
+                let numeroElegido = pool[indiceElegido];
                 
                 combinacion.add(numeroElegido);
             }
 
-            // Convertimos y ordenamos de menor a mayor
             let combinacionOrdenada = Array.from(combinacion).sort((a, b) => a - b);
 
             let htmlContent = '';
@@ -129,12 +253,13 @@
                 htmlContent += `<div class="number-ball">${numeroFormateado}</div>`;
             });
 
-            container.innerHTML = htmlContent;
+            document.getElementById('numbers-container').innerHTML = htmlContent;
         }
 
-        generateWeightedBonoloto();
+        generateDateBasedBonoloto();
 
-        // --- 2. LÓGICA DEL FONDO ESPACIAL ---
+
+        // --- 4. LÓGICA DEL FONDO ESPACIAL ---
         const canvas = document.getElementById('space');
         const ctx = canvas.getContext('2d');
 
