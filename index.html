@@ -2,510 +2,425 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <!-- Esta línea bloquea el zoom automático en móviles para que parezca una App real -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Diana</title>
+    <title>Predicción Bonoloto - Sistema Avanzado</title>
     <style>
-        * {
-            box-sizing: border-box;
-        }
+        * { box-sizing: border-box; }
 
         body, html {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            background-color: #000;
-            font-family: 'Courier New', Courier, monospace; 
-            color: rgba(255, 255, 255, 0.85);
-            overflow: hidden; /* Evita barras de scroll por defecto */
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            background-color: #000; font-family: 'Courier New', Courier, monospace; 
+            color: rgba(255, 255, 255, 0.85); overflow: hidden;
         }
         
         /* --- FONDO ESPACIAL --- */
-        canvas {
-            display: block;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            z-index: 0;
-        }
+        canvas { display: block; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 0; }
 
         /* --- PANTALLA DE SEGURIDAD --- */
         #security-screen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            backdrop-filter: blur(8px);
-            z-index: 100; /* Siempre encima de todo */
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            transition: opacity 0.5s ease;
-            padding: 20px;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(8px);
+            z-index: 100; display: flex; justify-content: center; align-items: center;
+            transition: opacity 0.5s ease; padding: 20px;
         }
 
         .security-box {
-            text-align: center;
-            padding: 30px 20px;
-            background: rgba(0, 0, 0, 0.9);
-            border: 1px solid rgba(0, 255, 204, 0.3);
-            border-radius: 15px;
-            box-shadow: 0 0 30px rgba(0, 255, 204, 0.15);
-            width: 100%;
-            max-width: 350px;
+            text-align: center; padding: 30px 20px; background: rgba(0, 0, 0, 0.9);
+            border: 1px solid rgba(0, 255, 204, 0.3); border-radius: 15px;
+            box-shadow: 0 0 30px rgba(0, 255, 204, 0.15); width: 100%; max-width: 350px;
         }
 
-        .security-box h2 {
-            margin-top: 0;
-            margin-bottom: 20px;
-            color: #fff;
-            font-size: 1.1rem;
-            letter-spacing: 1px;
-            text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+        .security-box h2 { margin-top: 0; margin-bottom: 20px; color: #fff; font-size: 1.1rem; text-shadow: 0 0 10px rgba(255, 255, 255, 0.8); }
+        .security-box input[type="password"] {
+            padding: 12px; font-size: 1.2rem; border-radius: 5px; border: 1px solid #00ffcc;
+            background: rgba(0, 0, 0, 0.5); color: #00ffcc; outline: none; text-align: center;
+            font-family: inherit; width: 100%; text-transform: lowercase; margin-bottom: 15px;
         }
 
-        .security-box input {
-            padding: 12px;
-            font-size: 1.2rem;
-            border-radius: 5px;
-            border: 1px solid #00ffcc;
-            background: rgba(0, 0, 0, 0.5);
-            color: #00ffcc;
-            outline: none;
-            text-align: center;
-            font-family: 'Courier New', Courier, monospace;
-            width: 100%;
-            text-transform: lowercase;
+        .audio-toggle {
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+            font-size: 0.9rem; color: #aaa; margin-bottom: 15px; cursor: pointer;
         }
 
         .security-box button {
-            display: block;
-            margin: 20px auto 0;
-            padding: 10px 25px;
-            font-size: 1rem;
-            cursor: pointer;
-            background: #00ffcc;
-            color: #000;
-            border: none;
-            border-radius: 5px;
-            font-weight: bold;
-            text-transform: uppercase;
-            transition: all 0.3s;
+            display: block; margin: 0 auto; padding: 10px 25px; font-size: 1rem; cursor: pointer;
+            background: #00ffcc; color: #000; border: none; border-radius: 5px; font-weight: bold;
+            text-transform: uppercase; transition: all 0.3s;
         }
+        .security-box button:hover { box-shadow: 0 0 15px #00ffcc; transform: scale(1.05); }
 
         .error-shake { animation: shake 0.4s; }
-        @keyframes shake {
-            0% { transform: translateX(0); }
-            25% { transform: translateX(-10px); }
-            50% { transform: translateX(10px); }
-            75% { transform: translateX(-10px); }
-            100% { transform: translateX(0); }
-        }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25%, 75% { transform: translateX(-10px); } 50% { transform: translateX(10px); } }
 
-        /* --- CONTENEDOR PRINCIPAL FLEXBOX (El secreto anti-solapamiento) --- */
+        /* --- UI PRINCIPAL --- */
         #ui-layer {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 10;
-            display: flex;
-            flex-direction: column;
-            padding: 20px;
-            overflow-y: auto; /* Si la pantalla es enana, permite hacer scroll en vez de aplastar cosas */
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 10;
+            display: flex; flex-direction: column; padding: 20px; overflow-y: auto; pointer-events: none;
         }
 
-        /* --- BARRA SUPERIOR (Reloj y Clima) --- */
-        #top-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 15px;
-            width: 100%;
-        }
+        /* --- BARRA SUPERIOR --- */
+        #top-bar { display: flex; justify-content: space-between; align-items: flex-start; width: 100%; pointer-events: auto; }
 
         .info-panel {
-            background: rgba(0, 0, 0, 0.5);
-            padding: 12px 18px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 8px;
-            backdrop-filter: blur(3px);
-            text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
-            min-width: 180px;
+            background: rgba(0, 0, 0, 0.5); padding: 10px 15px; border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px; backdrop-filter: blur(3px); min-width: 150px;
         }
-
         #top-right-panel { text-align: right; }
+        .panel-title { font-size: 0.7rem; color: rgba(255, 255, 255, 0.5); margin-bottom: 3px; text-transform: uppercase; }
+        .panel-data { font-size: 1rem; font-weight: bold; }
 
-        .info-block { margin-bottom: 10px; }
-        .info-block:last-child { margin-bottom: 0; }
-
-        .panel-title {
-            font-size: 0.75rem;
-            color: rgba(255, 255, 255, 0.5);
-            margin-bottom: 3px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+        /* Botón Bitácora */
+        #history-btn {
+            background: rgba(0, 0, 0, 0.6); border: 1px solid #00ffcc; color: #00ffcc;
+            padding: 8px 15px; border-radius: 20px; cursor: pointer; font-family: inherit; font-weight: bold;
+            pointer-events: auto; transition: 0.3s;
         }
-        .panel-data { font-size: 1.1rem; font-weight: bold; }
+        #history-btn:hover { background: #00ffcc; color: #000; box-shadow: 0 0 10px #00ffcc; }
 
+        /* --- MODAL HISTORIAL --- */
+        #history-modal {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9); border: 1px solid #00ffcc; border-radius: 10px;
+            padding: 20px; z-index: 50; width: 90%; max-width: 400px; display: none; pointer-events: auto;
+            backdrop-filter: blur(5px); box-shadow: 0 0 30px rgba(0,0,0,0.8);
+        }
+        #history-modal h3 { text-align: center; color: #00ffcc; margin-top: 0; }
+        #history-list { list-style: none; padding: 0; max-height: 300px; overflow-y: auto; font-size: 0.9rem; }
+        #history-list li { padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .close-btn { display: block; width: 100%; padding: 10px; margin-top: 15px; background: #333; color: #fff; border: none; cursor: pointer; }
 
-        /* --- ZONA CENTRAL (Números y Mensaje) --- */
+        /* --- ZONA CENTRAL --- */
         #center-stage {
-            flex-grow: 1; /* Ocupa todo el espacio restante empujándose automáticamente */
-            display: none; /* Oculto hasta que se pone la contraseña. Al ponerla se cambia a "flex" por JS */
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            gap: 40px; /* Separación garantizada e inquebrantable entre bolas y texto */
-            width: 100%;
-            padding: 20px 0;
+            flex-grow: 1; display: none; flex-direction: column; justify-content: center; align-items: center;
+            gap: 30px; width: 100%; padding: 20px 0;
         }
 
-        #numbers-wrapper {
-            position: relative;
-            perspective: 1200px;
-            width: 100%;
-            display: flex;
-            justify-content: center;
-        }
-
-        #numbers-wrapper::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 5px;
-            height: 5px;
-            background: #fff;
-            border-radius: 50%;
-            box-shadow: 0 0 80px 40px #fff, 0 0 150px 80px #00ffcc;
-            animation: starExplosion 2.5s ease-out forwards;
-            z-index: -1;
-            opacity: 0;
-        }
-
+        #numbers-wrapper { position: relative; perspective: 1200px; width: 100%; display: flex; justify-content: center; }
+        
         #numbers-container {
-            display: flex;
-            flex-wrap: wrap; /* Si no caben en una línea, bajan a la siguiente ordenadamente */
-            justify-content: center;
-            gap: 15px;
-            max-width: 600px;
-            animation: containerFlyIn 2.5s cubic-bezier(0.1, 1, 0.2, 1) forwards;
+            display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; max-width: 700px;
+            animation: containerFlyIn 2.5s cubic-bezier(0.1, 1, 0.2, 1) forwards; pointer-events: auto;
         }
 
+        /* DISEÑO DE BOLAS Y TEMPERATURAS */
         .number-ball {
-            background-color: rgba(0, 0, 0, 0.7); 
-            color: #fff;
-            width: 65px;
-            height: 65px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            border-radius: 50%; 
-            border: 2px solid rgba(255, 255, 255, 0.4);
-            font-size: 1.6rem;
-            font-weight: bold;
-            box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
-            backdrop-filter: blur(4px); 
-            opacity: 0; 
+            width: 60px; height: 60px; display: flex; justify-content: center; align-items: center; flex-direction: column;
+            border-radius: 50%; font-size: 1.5rem; font-weight: bold; opacity: 0; backdrop-filter: blur(4px);
+            position: relative;
         }
+        
+        /* Etiquetas C y R */
+        .ball-label { font-size: 0.6rem; position: absolute; top: -5px; background: rgba(0,0,0,0.8); padding: 2px 5px; border-radius: 10px; }
+
+        /* Temperaturas */
+        .ball-neutral { background: rgba(0, 0, 0, 0.7); border: 2px solid rgba(255, 255, 255, 0.4); color: #fff; box-shadow: 0 0 10px rgba(255,255,255,0.2); }
+        .ball-hot { background: rgba(50, 10, 0, 0.8); border: 2px solid #ff4500; color: #ffd700; box-shadow: 0 0 15px #ff4500; }
+        .ball-cold { background: rgba(0, 20, 50, 0.8); border: 2px solid #00bfff; color: #e0ffff; box-shadow: 0 0 15px #00bfff; }
+        
+        /* Extra */
+        .ball-comp { background: rgba(50, 50, 0, 0.9); border: 2px solid #ffd700; color: #fff; box-shadow: 0 0 20px #ffd700; }
+        .ball-reint { background: rgba(80, 0, 0, 0.9); border: 2px solid #ff0000; color: #fff; box-shadow: 0 0 20px #ff0000; }
 
         #info-text {
-            color: rgba(255,255,255,0.7);
-            font-size: 0.95rem;
-            text-align: center;
-            background: rgba(0,0,0,0.6);
-            padding: 10px 20px;
-            border-radius: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            animation: fadeInText 4s ease-in forwards;
-            opacity: 0;
-            max-width: 90%;
+            color: rgba(255,255,255,0.7); font-size: 0.9rem; text-align: center; background: rgba(0,0,0,0.6);
+            padding: 10px 20px; border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.1);
+            animation: fadeInText 4s ease-in forwards; opacity: 0; max-width: 90%;
         }
 
-        /* --- ANIMACIONES --- */
+        /* ANIMACIONES */
         @keyframes fadeInText { 80% { opacity: 0; } 100% { opacity: 1; } }
-        @keyframes starExplosion {
-            0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
-            10% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-            40% { transform: translate(-50%, -50%) scale(6); opacity: 0.8; }
-            100% { transform: translate(-50%, -50%) scale(10); opacity: 0; }
-        }
-        @keyframes containerFlyIn {
-            0% { transform: translateZ(-2000px) scale(0.1); }
-            100% { transform: translateZ(0) scale(1); }
-        }
-        @keyframes ballMaterialize {
-            0% { opacity: 0; transform: scale(0) rotate(720deg); box-shadow: 0 0 100px 50px rgba(0, 255, 204, 0.8); color: transparent; }
-            30% { opacity: 1; color: #fff; box-shadow: 0 0 50px 20px rgba(0, 255, 204, 0.6); }
-            100% { opacity: 1; transform: scale(1) rotate(0deg); box-shadow: 0 0 15px rgba(255, 255, 255, 0.2); color: #fff; }
-        }
+        @keyframes containerFlyIn { 0% { transform: translateZ(-2000px) scale(0.1); } 100% { transform: translateZ(0) scale(1); } }
+        
+        /* Animación dinámica de materialización inyectada por JS */
+        @keyframes ballMaterializeNeutral { 0% { opacity: 0; transform: scale(0) rotate(720deg); } 100% { opacity: 1; transform: scale(1) rotate(0deg); } }
 
-        /* ========================================= */
-        /* 📱 REGLAS ESPECÍFICAS PARA MÓVIL          */
-        /* ========================================= */
+        /* MÓVIL */
         @media (max-width: 650px) {
-            #ui-layer {
-                padding: 15px 10px;
-            }
-
-            /* Convertimos la barra superior en bloques apilados */
-            #top-bar {
-                flex-direction: column;
-                gap: 10px;
-            }
-
-            /* Cada panel ocupará todo el ancho para no chocar */
-            .info-panel {
-                width: 100%;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                padding: 10px 15px;
-                min-width: 0;
-            }
-
-            #top-left-panel, #top-right-panel { text-align: left; }
-            
+            #ui-layer { padding: 10px; }
+            #top-bar { flex-direction: column; gap: 10px; align-items: center; }
+            .info-panel { width: 100%; display: flex; justify-content: space-between; padding: 8px 12px; }
             .info-block { margin-bottom: 0; }
-            .info-block:last-child { text-align: right; }
-
-            .panel-data { font-size: 0.9rem; }
-            .panel-title { font-size: 0.65rem; }
-
-            /* Ajustes para que las bolas no saturen la pantalla pequeña */
-            #center-stage { gap: 25px; padding: 10px 0; }
-            
-            #numbers-container { gap: 10px; }
-            
-            .number-ball {
-                width: 50px;
-                height: 50px;
-                font-size: 1.3rem;
-            }
-
-            #info-text { font-size: 0.8rem; padding: 8px 15px; }
+            .number-ball { width: 50px; height: 50px; font-size: 1.2rem; }
         }
     </style>
 </head>
 <body>
 
-    <!-- Fondo de estrellas -->
     <canvas id="space"></canvas>
 
-    <!-- PANTALLA DE SEGURIDAD (Capa superior) -->
     <div id="security-screen">
         <div class="security-box" id="security-box">
             <h2>¿Este es el planeta de los...?</h2>
             <input type="password" id="password-input" placeholder="..." autocomplete="off">
+            <label class="audio-toggle">
+                <input type="checkbox" id="audio-checkbox"> Activar Audio (Recomendado)
+            </label>
             <button onclick="checkPassword()">Acceder</button>
         </div>
     </div>
 
-    <!-- UI PRINCIPAL (Capa que organiza los elementos sin solaparse) -->
+    <!-- Modal de Historial -->
+    <div id="history-modal">
+        <h3>Bitácora de Vuelo</h3>
+        <ul id="history-list"></ul>
+        <button class="close-btn" onclick="document.getElementById('history-modal').style.display='none'">Cerrar</button>
+    </div>
+
     <div id="ui-layer">
-        
-        <!-- Barra Superior (Reloj y Clima) -->
         <div id="top-bar">
             <div id="top-left-panel" class="info-panel">
-                <div class="info-block">
-                    <div class="panel-title">Fecha Local</div>
-                    <div id="date-display" class="panel-data">Cargando...</div>
-                </div>
-                <div class="info-block">
-                    <div class="panel-title">Reloj Local</div>
-                    <div id="time-display" class="panel-data">--:--:--</div>
-                </div>
+                <div class="info-block"><div class="panel-title">Fecha Local</div><div id="date-display" class="panel-data">Cargando..</div></div>
+                <div class="info-block"><div class="panel-title">Reloj Local</div><div id="time-display" class="panel-data">--:--</div></div>
             </div>
+            
+            <button id="history-btn" onclick="showHistory()">BITÁCORA</button>
 
             <div id="top-right-panel" class="info-panel">
-                <div class="info-block">
-                    <div class="panel-title">Ubicación</div>
-                    <div id="location-display" class="panel-data">Buscando...</div>
-                </div>
-                <div class="info-block">
-                    <div class="panel-title">Clima Actual</div>
-                    <div id="weather-display" class="panel-data">-- °C</div>
-                </div>
+                <div class="info-block"><div class="panel-title">Ubicación</div><div id="location-display" class="panel-data">Buscando..</div></div>
+                <div class="info-block"><div class="panel-title">Clima</div><div id="weather-display" class="panel-data">-- °C</div></div>
             </div>
         </div>
 
-        <!-- Zona Central (Se mostrará solo al acertar la contraseña) -->
         <div id="center-stage">
-            <div id="numbers-wrapper">
-                <div id="numbers-container"></div>
+            <div id="numbers-wrapper"><div id="numbers-container"></div></div>
+            <div id="info-text">Jugada para el: <span id="next-draw-date"></span><br>
+                <span style="font-size:0.75rem; color:#aaa;">(Naranja=Caliente | Azul=Frío | C=Comp | R=Reint)</span>
             </div>
-            <div id="info-text">Jugada probabilística para el sorteo del: <span id="next-draw-date"></span></div>
         </div>
-
     </div>
 
     <script>
-        // --- 0. SISTEMA DE SEGURIDAD ---
+        // --- MOTOR DE AUDIO SINTÉTICO ---
+        let audioCtx;
+        let soundEnabled = false;
+
+        function initAudio() {
+            soundEnabled = document.getElementById('audio-checkbox').checked;
+            if (soundEnabled) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                
+                // Ruido ambiental de motor de nave
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.value = 60; // Frecuencia muy grave
+                gain.gain.value = 0.15;
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+            }
+        }
+
+        function playSwoosh(delaySecs, isSpecial = false) {
+            if (!soundEnabled || !audioCtx) return;
+            setTimeout(() => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                
+                osc.type = isSpecial ? 'square' : 'sine';
+                osc.frequency.setValueAtTime(isSpecial ? 1200 : 800, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.4);
+                
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+                
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.4);
+            }, delaySecs * 1000);
+        }
+
+        // --- SISTEMA DE SEGURIDAD ---
         function checkPassword() {
             const input = document.getElementById('password-input');
-            const password = input.value.trim().toLowerCase();
-            const securityBox = document.getElementById('security-box');
-            const securityScreen = document.getElementById('security-screen');
-
-            if (password === 'mimisos') {
-                // Al acertar, ocultamos la pantalla negra y mostramos el escenario central
-                securityScreen.style.opacity = '0';
+            if (input.value.trim().toLowerCase() === 'mimisos') {
+                initAudio();
+                document.getElementById('security-screen').style.opacity = '0';
                 setTimeout(() => {
-                    securityScreen.style.display = 'none';
-                    // Aquí activamos el Flexbox del contenedor central
+                    document.getElementById('security-screen').style.display = 'none';
                     document.getElementById('center-stage').style.display = 'flex';
                     generateDateBasedBonoloto();
                 }, 500); 
             } else {
-                securityBox.classList.add('error-shake');
+                document.getElementById('security-box').classList.add('error-shake');
                 input.value = ''; 
-                setTimeout(() => { securityBox.classList.remove('error-shake'); }, 400);
+                setTimeout(() => document.getElementById('security-box').classList.remove('error-shake'), 400);
             }
         }
+        document.getElementById('password-input').addEventListener('keypress', e => { if (e.key === 'Enter') checkPassword(); });
 
-        document.getElementById('password-input').addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') checkPassword();
-        });
-
-        // --- 1. RELOJ Y FECHA ---
-        function updateClockAndDate() {
+        // --- RELOJ, UBICACIÓN Y CLIMA ---
+        setInterval(() => {
             const now = new Date();
-            const dateOptions = { weekday: 'long', year: 'numeric', month: '2-digit', day: '2-digit' };
-            const formattedDate = now.toLocaleDateString('es-ES', dateOptions);
-            document.getElementById('date-display').innerText = formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1);
-            const timeOptions = { hour: '2-digit', minute: '2-digit', second: '2-digit' };
-            document.getElementById('time-display').innerText = now.toLocaleTimeString('es-ES', timeOptions);
-        }
-        setInterval(updateClockAndDate, 1000);
-        updateClockAndDate();
+            document.getElementById('date-display').innerText = now.toLocaleDateString('es-ES', { month: 'short', day: '2-digit' });
+            document.getElementById('time-display').innerText = now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        }, 1000);
 
-        // --- 2. UBICACIÓN Y CLIMA POR IP ---
         async function fetchWeatherAndLocation() {
             try {
-                const geoResponse = await fetch('https://get.geojs.io/v1/ip/geo.json');
-                const geoData = await geoResponse.json();
-                
-                const city = geoData.city || "Ubicación detectada";
-                const lat = geoData.latitude;
-                const lon = geoData.longitude;
-                
-                document.getElementById('location-display').innerText = city;
-
-                const weatherResponse = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`);
-                const weatherData = await weatherResponse.json();
-                const temp = weatherData.current_weather.temperature;
-                
-                document.getElementById('weather-display').innerText = `${temp} °C`;
-            } catch (error) {
-                document.getElementById('location-display').innerText = "Oculto";
-                document.getElementById('weather-display').innerText = "-- °C";
+                const geo = await (await fetch('https://get.geojs.io/v1/ip/geo.json')).json();
+                document.getElementById('location-display').innerText = geo.city || "Detectada";
+                const weather = await (await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${geo.latitude}&longitude=${geo.longitude}&current_weather=true`)).json();
+                document.getElementById('weather-display').innerText = `${weather.current_weather.temperature} °C`;
+            } catch (e) {
+                document.getElementById('location-display').innerText = "Oculta";
+                document.getElementById('weather-display').innerText = "--";
             }
         }
         fetchWeatherAndLocation();
 
-        // --- 3. LÓGICA DE BONOLOTO POR FECHA ---
-        function seededRandom(seed) {
-            let x = Math.sin(seed++) * 10000;
-            return x - Math.floor(x);
-        }
+        // --- MOTOR BONOLOTO (TEMPERATURAS, COMP, REINT, HISTORIAL) ---
+        function seededRandom(seed) { let x = Math.sin(seed++) * 10000; return x - Math.floor(x); }
 
         function generateDateBasedBonoloto() {
-            const today = new Date();
-            const tomorrow = new Date(today);
-            tomorrow.setDate(tomorrow.getDate() + 1);
-
-            document.getElementById('next-draw-date').innerText = tomorrow.toLocaleDateString('es-ES');
+            const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1);
+            const drawDate = tomorrow.toLocaleDateString('es-ES');
+            document.getElementById('next-draw-date').innerText = drawDate;
 
             let seed = (tomorrow.getFullYear() * 10000) + ((tomorrow.getMonth() + 1) * 100) + tomorrow.getDate();
 
-            const numerosCalientes = [33, 10, 34, 2, 22, 11, 23, 31, 3, 19];
-            const numerosFrios = [43, 5, 8, 49, 13, 20, 27];
+            const calientes = [33, 10, 34, 2, 22, 11, 23, 31, 3, 19];
+            const frios = [43, 5, 8, 49, 13, 20, 27];
             
             let pool = [];
             for (let i = 1; i <= 49; i++) {
-                if (numerosCalientes.includes(i)) pool.push(i, i, i, i); 
-                else if (numerosFrios.includes(i)) pool.push(i); 
+                if (calientes.includes(i)) pool.push(i, i, i, i); 
+                else if (frios.includes(i)) pool.push(i); 
                 else pool.push(i, i); 
             }
 
+            // 1. Extraer 6 números principales
             let combinacion = new Set(); 
             while (combinacion.size < 6) {
-                seed += 1; 
-                let randomVal = seededRandom(seed);
-                let indiceElegido = Math.floor(randomVal * pool.length);
-                combinacion.add(pool[indiceElegido]);
+                seed++;
+                combinacion.add(pool[Math.floor(seededRandom(seed) * pool.length)]);
             }
+            let ordenados = Array.from(combinacion).sort((a, b) => a - b);
 
+            // 2. Extraer Complementario (que no esté en los 6 principales)
+            let comp;
+            do { seed++; comp = Math.floor(seededRandom(seed) * 49) + 1; } while (combinacion.has(comp));
+
+            // 3. Extraer Reintegro (0-9)
+            seed++; let reint = Math.floor(seededRandom(seed) * 10);
+
+            // 4. Generar HTML y Sonidos
             let htmlContent = '';
-            Array.from(combinacion).sort((a, b) => a - b).forEach((num, index) => {
-                let delay = index * 0.3; 
-                htmlContent += `<div class="number-ball" style="animation: ballMaterialize 1.5s cubic-bezier(0.2, 0.8, 0.2, 1) ${delay}s forwards;">${num.toString().padStart(2, '0')}</div>`;
+            let currentDelay = 0;
+
+            // Renderizar las 6 bolas
+            ordenados.forEach(num => {
+                let tempClass = calientes.includes(num) ? 'ball-hot' : (frios.includes(num) ? 'ball-cold' : 'ball-neutral');
+                htmlContent += `<div class="number-ball ${tempClass}" style="animation: ballMaterializeNeutral 1s cubic-bezier(0.2, 0.8, 0.2, 1) ${currentDelay}s forwards;">${num.toString().padStart(2, '0')}</div>`;
+                playSwoosh(currentDelay);
+                currentDelay += 0.4;
             });
 
+            // Pausa dramática
+            currentDelay += 0.5;
+
+            // Renderizar Complementario
+            htmlContent += `<div class="number-ball ball-comp" style="animation: ballMaterializeNeutral 1s cubic-bezier(0.2, 0.8, 0.2, 1) ${currentDelay}s forwards;"><span class="ball-label">C</span>${comp.toString().padStart(2, '0')}</div>`;
+            playSwoosh(currentDelay, true);
+            currentDelay += 0.6;
+
+            // Renderizar Reintegro
+            htmlContent += `<div class="number-ball ball-reint" style="animation: ballMaterializeNeutral 1s cubic-bezier(0.2, 0.8, 0.2, 1) ${currentDelay}s forwards;"><span class="ball-label">R</span>${reint}</div>`;
+            playSwoosh(currentDelay, true);
+
             document.getElementById('numbers-container').innerHTML = htmlContent;
+
+            // 5. Guardar en Bitácora
+            saveToHistory(drawDate, ordenados, comp, reint);
         }
 
-        // --- 4. FONDO ESPACIAL ---
+        // --- SISTEMA DE BITÁCORA (LocalStorage) ---
+        function saveToHistory(date, nums, c, r) {
+            let history = JSON.parse(localStorage.getItem('bonoHistory')) || [];
+            // Comprobar si ya existe esa fecha
+            if (!history.find(h => h.date === date)) {
+                history.unshift({ date, nums, c, r }); // Añadir al principio
+                if (history.length > 10) history.pop(); // Mantener solo las últimas 10
+                localStorage.setItem('bonoHistory', JSON.stringify(history));
+            }
+        }
+
+        function showHistory() {
+            const list = document.getElementById('history-list');
+            let history = JSON.parse(localStorage.getItem('bonoHistory')) || [];
+            list.innerHTML = '';
+            
+            if (history.length === 0) {
+                list.innerHTML = '<li>Sin registros aún.</li>';
+            } else {
+                history.forEach(h => {
+                    list.innerHTML += `<li><strong>${h.date}</strong>: ${h.nums.join('-')} | C:${h.c} R:${h.r}</li>`;
+                });
+            }
+            document.getElementById('history-modal').style.display = 'block';
+        }
+
+
+        // --- FONDO ESPACIAL INTERACTIVO (PARALLAX) ---
         const canvas = document.getElementById('space');
         const ctx = canvas.getContext('2d');
         let width, height;
         let stars = [];
-        const numStars = 800;
-        const speed = 8;
+        
+        // Variables de Parallax
+        let mouseX = 0, mouseY = 0;
 
-        function resize() {
-            width = window.innerWidth;
-            height = window.innerHeight;
-            canvas.width = width;
-            canvas.height = height;
-        }
-        window.addEventListener('resize', resize);
-        resize();
+        function resize() { width = window.innerWidth; height = window.innerHeight; canvas.width = width; canvas.height = height; }
+        window.addEventListener('resize', resize); resize();
+
+        // Detectar ratón en PC
+        window.addEventListener('mousemove', e => {
+            mouseX = (e.clientX - width / 2) * 0.2; // Sensibilidad
+            mouseY = (e.clientY - height / 2) * 0.2;
+        });
+
+        // Detectar giroscopio en móviles
+        window.addEventListener('deviceorientation', e => {
+            if(e.gamma !== null) {
+                mouseX = e.gamma * 2; 
+                mouseY = (e.beta - 45) * 2; // Ajuste para cuando se sostiene en ángulo
+            }
+        });
 
         class Star {
             constructor() { this.reset(); }
             reset() {
-                this.x = (Math.random() - 0.5) * width * 2;
-                this.y = (Math.random() - 0.5) * height * 2;
+                this.x = (Math.random() - 0.5) * width * 3; // Área más grande para compensar el movimiento
+                this.y = (Math.random() - 0.5) * height * 3;
                 this.z = Math.random() * width;
                 this.pz = this.z;
             }
             update() {
-                this.z -= speed;
-                if (this.z <= 0) {
-                    this.reset();
-                    this.z = width;
-                    this.pz = this.z;
-                }
+                this.z -= 8;
+                if (this.z <= 0) { this.reset(); this.z = width; this.pz = this.z; }
             }
             draw() {
-                let sx = (this.x / this.z) * (width / 2) + width / 2;
-                let sy = (this.y / this.z) * (height / 2) + height / 2;
-                let px = (this.x / this.pz) * (width / 2) + width / 2;
-                let py = (this.y / this.pz) * (height / 2) + height / 2;
+                // Aplicar el desvío del Parallax al centro geométrico
+                let centerX = (width / 2) + mouseX;
+                let centerY = (height / 2) + mouseY;
+
+                let sx = (this.x / this.z) * (width / 2) + centerX;
+                let sy = (this.y / this.z) * (height / 2) + centerY;
+                let px = (this.x / this.pz) * (width / 2) + centerX;
+                let py = (this.y / this.pz) * (height / 2) + centerY;
                 this.pz = this.z;
                 
-                let r = (1 - this.z / width) * 3;
-                let alpha = 1 - (this.z / width);
-
                 ctx.beginPath();
                 ctx.moveTo(px, py);
                 ctx.lineTo(sx, sy);
-                ctx.lineWidth = Math.max(0, r);
-                ctx.strokeStyle = `rgba(255, 255, 255, ${Math.max(0, alpha)})`;
+                ctx.lineWidth = Math.max(0, (1 - this.z / width) * 3);
+                ctx.strokeStyle = `rgba(255, 255, 255, ${Math.max(0, 1 - this.z / width)})`;
                 ctx.stroke();
             }
         }
 
-        for (let i = 0; i < numStars; i++) stars.push(new Star());
+        for (let i = 0; i < 800; i++) stars.push(new Star());
 
         function animate() {
             ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
