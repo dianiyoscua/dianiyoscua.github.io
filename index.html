@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Predicción Bonoloto - Sistema Avanzado</title>
+    <title>Predicción Bonoloto - Sistema IA</title>
     <style>
         * { box-sizing: border-box; }
 
@@ -11,9 +11,9 @@
             margin: 0; padding: 0; width: 100%; height: 100%;
             background-color: #000; font-family: 'Courier New', Courier, monospace; 
             color: rgba(255, 255, 255, 0.85); overflow: hidden;
+            cursor: crosshair;
         }
         
-        /* --- FONDO ESPACIAL --- */
         canvas { display: block; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 0; }
 
         /* --- PANTALLA DE SEGURIDAD --- */
@@ -35,11 +35,6 @@
             padding: 12px; font-size: 1.2rem; border-radius: 5px; border: 1px solid #00ffcc;
             background: rgba(0, 0, 0, 0.5); color: #00ffcc; outline: none; text-align: center;
             font-family: inherit; width: 100%; text-transform: lowercase; margin-bottom: 15px;
-        }
-
-        .audio-toggle {
-            display: flex; align-items: center; justify-content: center; gap: 10px;
-            font-size: 0.9rem; color: #aaa; margin-bottom: 15px; cursor: pointer;
         }
 
         .security-box button {
@@ -73,7 +68,7 @@
         #history-btn {
             background: rgba(0, 0, 0, 0.6); border: 1px solid #00ffcc; color: #00ffcc;
             padding: 8px 15px; border-radius: 20px; cursor: pointer; font-family: inherit; font-weight: bold;
-            pointer-events: auto; transition: 0.3s;
+            pointer-events: auto; transition: 0.3s; height: fit-content;
         }
         #history-btn:hover { background: #00ffcc; color: #000; box-shadow: 0 0 10px #00ffcc; }
 
@@ -108,16 +103,34 @@
             border-radius: 50%; font-size: 1.5rem; font-weight: bold; opacity: 0; backdrop-filter: blur(4px);
         }
         
-        /* Temperaturas */
         .ball-neutral { background: rgba(0, 0, 0, 0.7); border: 2px solid rgba(255, 255, 255, 0.4); color: #fff; box-shadow: 0 0 10px rgba(255,255,255,0.2); }
         .ball-hot { background: rgba(50, 10, 0, 0.8); border: 2px solid #ff4500; color: #ffd700; box-shadow: 0 0 15px #ff4500; }
         .ball-cold { background: rgba(0, 20, 50, 0.8); border: 2px solid #00bfff; color: #e0ffff; box-shadow: 0 0 15px #00bfff; }
 
         #info-text {
             color: rgba(255,255,255,0.7); font-size: 0.9rem; text-align: center; background: rgba(0,0,0,0.6);
-            padding: 10px 20px; border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.1);
-            animation: fadeInText 4s ease-in forwards; opacity: 0; max-width: 90%;
+            padding: 10px 20px; border-radius: 15px; border: 1px solid rgba(255, 255, 255, 0.1);
+            animation: fadeInText 4s ease-in forwards; opacity: 0; max-width: 90%; line-height: 1.5;
         }
+
+        /* --- BOTÓN COPIAR --- */
+        #copy-btn {
+            background: transparent; color: #00ffcc; border: 1px dashed #00ffcc; padding: 10px 25px;
+            border-radius: 5px; cursor: pointer; font-family: inherit; font-size: 1rem;
+            pointer-events: auto; opacity: 0; transition: all 0.3s; margin-top: 10px;
+            animation: fadeInText 4s ease-in forwards; animation-delay: 2s;
+        }
+        #copy-btn:hover { background: rgba(0, 255, 204, 0.2); box-shadow: 0 0 10px rgba(0, 255, 204, 0.5); }
+        #copy-btn.copied { background: #00ffcc; color: #000; border: 1px solid #00ffcc; }
+
+        /* --- CUENTA REGRESIVA --- */
+        #countdown-container {
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            background: rgba(0,0,0,0.7); padding: 8px 20px; border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.2); font-size: 0.85rem; color: #aaa;
+            z-index: 10; text-align: center; pointer-events: none; opacity: 0; display: none;
+        }
+        #countdown-timer { color: #00ffcc; font-weight: bold; letter-spacing: 1px; font-size: 1rem;}
 
         /* ANIMACIONES */
         @keyframes fadeInText { 80% { opacity: 0; } 100% { opacity: 1; } }
@@ -131,6 +144,7 @@
             .info-panel { width: 100%; display: flex; justify-content: space-between; padding: 8px 12px; }
             .info-block { margin-bottom: 0; }
             .number-ball { width: 50px; height: 50px; font-size: 1.2rem; }
+            #countdown-container { bottom: 10px; padding: 5px 15px; font-size: 0.75rem;}
         }
     </style>
 </head>
@@ -142,14 +156,10 @@
         <div class="security-box" id="security-box">
             <h2>¿Este es el planeta de los...?</h2>
             <input type="password" id="password-input" placeholder="..." autocomplete="off">
-            <label class="audio-toggle">
-                <input type="checkbox" id="audio-checkbox"> Activar Audio (Recomendado)
-            </label>
             <button onclick="checkPassword()">Acceder</button>
         </div>
     </div>
 
-    <!-- Modal de Historial -->
     <div id="history-modal">
         <h3>Bitácora de Vuelo</h3>
         <ul id="history-list"></ul>
@@ -173,63 +183,35 @@
 
         <div id="center-stage">
             <div id="numbers-wrapper"><div id="numbers-container"></div></div>
-            <div id="info-text">Jugada para el: <span id="next-draw-date"></span><br>
-                <span style="font-size:0.75rem; color:#aaa;">(Naranja = Caliente | Azul = Frío | Blanco = Neutro)</span>
+            
+            <div id="info-text">Jugada para el sorteo del: <strong id="next-draw-date" style="color:#00ffcc;"></strong><br>
+                <span style="font-size:0.75rem; color:#aaa;">(Naranja=Caliente | Azul=Frío | Blanco=Neutro)</span>
             </div>
+
+            <button id="copy-btn" onclick="copyCurrentNumbers()">COPIAR JUGADA</button>
         </div>
     </div>
 
+    <div id="countdown-container">
+        Cierre del próximo sorteo en:<br>
+        <span id="countdown-timer">--:--:--</span>
+    </div>
+
     <script>
-        // --- MOTOR DE AUDIO SINTÉTICO ---
-        let audioCtx;
-        let soundEnabled = false;
+        let currentNumbersArray = [];
 
-        function initAudio() {
-            soundEnabled = document.getElementById('audio-checkbox').checked;
-            if (soundEnabled) {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.type = 'triangle';
-                osc.frequency.value = 60; 
-                gain.gain.value = 0.15;
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-                osc.start();
-            }
-        }
-
-        function playSwoosh(delaySecs) {
-            if (!soundEnabled || !audioCtx) return;
-            setTimeout(() => {
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-                
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(800, audioCtx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.4);
-                
-                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
-                
-                osc.start();
-                osc.stop(audioCtx.currentTime + 0.4);
-            }, delaySecs * 1000);
-        }
-
-        // --- SISTEMA DE SEGURIDAD ---
+        // --- SEGURIDAD ---
         function checkPassword() {
             const input = document.getElementById('password-input');
             if (input.value.trim().toLowerCase() === 'mimisos') {
-                initAudio();
                 document.getElementById('security-screen').style.opacity = '0';
                 setTimeout(() => {
                     document.getElementById('security-screen').style.display = 'none';
                     document.getElementById('center-stage').style.display = 'flex';
+                    document.getElementById('countdown-container').style.display = 'block';
+                    document.getElementById('countdown-container').style.animation = 'fadeInText 3s forwards';
                     generateDateBasedBonoloto();
+                    startCountdown();
                 }, 500); 
             } else {
                 document.getElementById('security-box').classList.add('error-shake');
@@ -239,7 +221,7 @@
         }
         document.getElementById('password-input').addEventListener('keypress', e => { if (e.key === 'Enter') checkPassword(); });
 
-        // --- RELOJ, UBICACIÓN Y CLIMA ---
+        // --- RELOJ Y FECHA ---
         setInterval(() => {
             const now = new Date();
             document.getElementById('date-display').innerText = now.toLocaleDateString('es-ES', { month: 'short', day: '2-digit' });
@@ -259,14 +241,29 @@
         }
         fetchWeatherAndLocation();
 
-        // --- MOTOR BONOLOTO (6 NÚMEROS) ---
+        // --- CUENTA REGRESIVA ---
+        function startCountdown() {
+            setInterval(() => {
+                const now = new Date();
+                let target = new Date();
+                target.setDate(target.getDate() + 1);
+                target.setHours(21, 0, 0, 0);
+                let diff = target - now;
+                if(diff < 0) diff = 0;
+                let h = Math.floor((diff / (1000 * 60 * 60)) % 24);
+                let m = Math.floor((diff / 1000 / 60) % 60);
+                let s = Math.floor((diff / 1000) % 60);
+                document.getElementById('countdown-timer').innerText = 
+                    `${h.toString().padStart(2, '0')}h : ${m.toString().padStart(2, '0')}m : ${s.toString().padStart(2, '0')}s`;
+            }, 1000);
+        }
+
+        // --- BONOLOTO ---
         function seededRandom(seed) { let x = Math.sin(seed++) * 10000; return x - Math.floor(x); }
 
         function generateDateBasedBonoloto() {
             const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1);
-            const drawDate = tomorrow.toLocaleDateString('es-ES');
-            document.getElementById('next-draw-date').innerText = drawDate;
-
+            document.getElementById('next-draw-date').innerText = tomorrow.toLocaleDateString('es-ES');
             let seed = (tomorrow.getFullYear() * 10000) + ((tomorrow.getMonth() + 1) * 100) + tomorrow.getDate();
 
             const calientes = [33, 10, 34, 2, 22, 11, 23, 31, 3, 19];
@@ -285,22 +282,18 @@
                 combinacion.add(pool[Math.floor(seededRandom(seed) * pool.length)]);
             }
             let ordenados = Array.from(combinacion).sort((a, b) => a - b);
+            currentNumbersArray = ordenados;
 
             let htmlContent = '';
-            let currentDelay = 0;
-
-            ordenados.forEach(num => {
+            ordenados.forEach((num, index) => {
                 let tempClass = calientes.includes(num) ? 'ball-hot' : (frios.includes(num) ? 'ball-cold' : 'ball-neutral');
-                htmlContent += `<div class="number-ball ${tempClass}" style="animation: ballMaterializeNeutral 1s cubic-bezier(0.2, 0.8, 0.2, 1) ${currentDelay}s forwards;">${num.toString().padStart(2, '0')}</div>`;
-                playSwoosh(currentDelay);
-                currentDelay += 0.4;
+                htmlContent += `<div class="number-ball ${tempClass}" style="animation: ballMaterializeNeutral 1s cubic-bezier(0.2, 0.8, 0.2, 1) ${index * 0.3}s forwards;">${num.toString().padStart(2, '0')}</div>`;
             });
-
             document.getElementById('numbers-container').innerHTML = htmlContent;
-            saveToHistory(drawDate, ordenados);
+            saveToHistory(tomorrow.toLocaleDateString('es-ES'), ordenados);
         }
 
-        // --- SISTEMA DE BITÁCORA ---
+        // --- BITÁCORA Y COPIADO ---
         function saveToHistory(date, nums) {
             let history = JSON.parse(localStorage.getItem('bonoHistory')) || [];
             if (!history.find(h => h.date === date)) {
@@ -313,77 +306,55 @@
         function showHistory() {
             const list = document.getElementById('history-list');
             let history = JSON.parse(localStorage.getItem('bonoHistory')) || [];
-            list.innerHTML = '';
-            
-            if (history.length === 0) {
-                list.innerHTML = '<li>Sin registros aún.</li>';
-            } else {
-                history.forEach(h => {
-                    list.innerHTML += `<li><strong style="color:#aaa; font-size:0.8rem; display:block; margin-bottom:5px;">${h.date}</strong> ${h.nums.join(' - ')}</li>`;
-                });
-            }
+            list.innerHTML = history.length === 0 ? '<li>Sin registros aún.</li>' : history.map(h => `<li><strong style="color:#aaa; font-size:0.8rem; display:block;">${h.date}</strong> <span style="color:#00ffcc">${h.nums.join(' - ')}</span></li>`).join('');
             document.getElementById('history-modal').style.display = 'block';
         }
 
-        // --- FONDO ESPACIAL INTERACTIVO (PARALLAX) ---
+        function copyCurrentNumbers() {
+            if(currentNumbersArray.length === 0) return;
+            const textToCopy = currentNumbersArray.map(n => n.toString().padStart(2, '0')).join(' - ');
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                const copyBtn = document.getElementById('copy-btn');
+                copyBtn.innerText = "¡COPIADO!";
+                copyBtn.classList.add('copied');
+                setTimeout(() => { copyBtn.innerText = "COPIAR JUGADA"; copyBtn.classList.remove('copied'); }, 3000);
+            });
+        }
+
+        // --- FONDO ESTRELLAS + COMETA ---
         const canvas = document.getElementById('space');
         const ctx = canvas.getContext('2d');
-        let width, height;
-        let stars = [];
-        let mouseX = 0, mouseY = 0;
+        let width, height, stars = [], mouseX = 0, mouseY = 0, realMouseX = -100, realMouseY = -100, cometTrail = [];
 
         function resize() { width = window.innerWidth; height = window.innerHeight; canvas.width = width; canvas.height = height; }
         window.addEventListener('resize', resize); resize();
-
-        window.addEventListener('mousemove', e => {
-            mouseX = (e.clientX - width / 2) * 0.2; 
-            mouseY = (e.clientY - height / 2) * 0.2;
-        });
-
-        window.addEventListener('deviceorientation', e => {
-            if(e.gamma !== null) {
-                mouseX = e.gamma * 2; 
-                mouseY = (e.beta - 45) * 2; 
-            }
-        });
+        window.addEventListener('mousemove', e => { mouseX = (e.clientX - width / 2) * 0.15; mouseY = (e.clientY - height / 2) * 0.15; realMouseX = e.clientX; realMouseY = e.clientY; cometTrail.push({x: realMouseX, y: realMouseY, alpha: 1}); });
+        window.addEventListener('touchmove', e => { realMouseX = e.touches[0].clientX; realMouseY = e.touches[0].clientY; cometTrail.push({x: realMouseX, y: realMouseY, alpha: 1}); });
 
         class Star {
             constructor() { this.reset(); }
-            reset() {
-                this.x = (Math.random() - 0.5) * width * 3; 
-                this.y = (Math.random() - 0.5) * height * 3;
-                this.z = Math.random() * width;
-                this.pz = this.z;
-            }
-            update() {
-                this.z -= 8;
-                if (this.z <= 0) { this.reset(); this.z = width; this.pz = this.z; }
-            }
+            reset() { this.x = (Math.random() - 0.5) * width * 3; this.y = (Math.random() - 0.5) * height * 3; this.z = Math.random() * width; this.pz = this.z; }
+            update() { this.z -= 8; if (this.z <= 0) { this.reset(); this.z = width; this.pz = this.z; } }
             draw() {
-                let centerX = (width / 2) + mouseX;
-                let centerY = (height / 2) + mouseY;
-
-                let sx = (this.x / this.z) * (width / 2) + centerX;
-                let sy = (this.y / this.z) * (height / 2) + centerY;
-                let px = (this.x / this.pz) * (width / 2) + centerX;
-                let py = (this.y / this.pz) * (height / 2) + centerY;
+                let centerX = (width / 2) + mouseX; let centerY = (height / 2) + mouseY;
+                let sx = (this.x / this.z) * (width / 2) + centerX; let sy = (this.y / this.z) * (height / 2) + centerY;
+                let px = (this.x / this.pz) * (width / 2) + centerX; let py = (this.y / this.pz) * (height / 2) + centerY;
                 this.pz = this.z;
-                
-                ctx.beginPath();
-                ctx.moveTo(px, py);
-                ctx.lineTo(sx, sy);
-                ctx.lineWidth = Math.max(0, (1 - this.z / width) * 3);
-                ctx.strokeStyle = `rgba(255, 255, 255, ${Math.max(0, 1 - this.z / width)})`;
-                ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(sx, sy); ctx.lineWidth = Math.max(0, (1 - this.z / width) * 3);
+                ctx.strokeStyle = `rgba(255, 255, 255, ${Math.max(0, 1 - this.z / width)})`; ctx.stroke();
             }
         }
-
         for (let i = 0; i < 800; i++) stars.push(new Star());
 
         function animate() {
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
-            ctx.fillRect(0, 0, width, height);
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.4)'; ctx.fillRect(0, 0, width, height);
             stars.forEach(star => { star.update(); star.draw(); });
+            if (cometTrail.length > 0) {
+                ctx.beginPath();
+                for (let i = 0; i < cometTrail.length; i++) { let p = cometTrail[i]; ctx.lineTo(p.x, p.y); p.alpha -= 0.05; }
+                ctx.strokeStyle = 'rgba(0, 255, 204, 0.5)'; ctx.lineWidth = 4; ctx.lineCap = 'round'; ctx.stroke();
+                cometTrail = cometTrail.filter(p => p.alpha > 0);
+            }
             requestAnimationFrame(animate);
         }
         animate();
