@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Predicción Bonoloto Espacial</title>
+    <title>We love you Glu Glu</title>
     <style>
         body, html {
             margin: 0;
@@ -13,7 +13,7 @@
             overflow: hidden;
             background-color: #000;
             font-family: 'Courier New', Courier, monospace; 
-            color: rgba(255, 255, 255, 0.85); /* Color estrella apagada */
+            color: rgba(255, 255, 255, 0.85);
         }
         
         canvas {
@@ -26,7 +26,7 @@
             z-index: 1;
         }
 
-        /* Paneles de información (Esquinas) */
+        /* --- Paneles de información (Reloj, Fecha y Clima) --- */
         .info-panel {
             position: absolute;
             z-index: 3;
@@ -38,16 +38,8 @@
             text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
         }
 
-        #top-left-panel {
-            top: 20px;
-            left: 20px;
-        }
-
-        #top-right-panel {
-            top: 20px;
-            right: 20px;
-            text-align: right;
-        }
+        #top-left-panel { top: 20px; left: 20px; }
+        #top-right-panel { top: 20px; right: 20px; text-align: right; }
 
         .panel-title {
             font-size: 0.8rem;
@@ -56,50 +48,7 @@
             text-transform: uppercase;
             letter-spacing: 1px;
         }
-
-        .panel-data {
-            font-size: 1.2rem;
-            font-weight: bold;
-        }
-
-        /* Contenedor central de los números */
-        #numbers-container {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 2; 
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 20px;
-            width: 90%;
-            max-width: 800px;
-        }
-
-        .number-ball {
-            background-color: rgba(0, 0, 0, 0.7); 
-            color: #fff;
-            width: 70px;
-            height: 70px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            border-radius: 50%; 
-            border: 2px solid rgba(255, 255, 255, 0.4);
-            font-size: 1.8rem;
-            font-weight: bold;
-            text-shadow: 0 0 10px rgba(255, 255, 255, 0.9); 
-            box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
-            backdrop-filter: blur(4px); 
-            transition: transform 0.3s;
-        }
-
-        .number-ball:hover {
-            transform: scale(1.1);
-            border-color: #00ffcc;
-            box-shadow: 0 0 20px rgba(0, 255, 204, 0.5);
-        }
+        .panel-data { font-size: 1.2rem; font-weight: bold; }
 
         #info-text {
             position: absolute;
@@ -113,6 +62,111 @@
             background: rgba(0,0,0,0.5);
             padding: 5px 15px;
             border-radius: 20px;
+            /* El texto también aparece con un suave retraso */
+            animation: fadeInText 4s ease-in forwards;
+            opacity: 0;
+        }
+
+        @keyframes fadeInText {
+            80% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+
+        /* --- CONTENEDORES DE LA ANIMACIÓN 3D --- */
+        
+        /* Envoltorio que le da la perspectiva 3D al vuelo */
+        #numbers-wrapper {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 2;
+            perspective: 1200px; /* Profundidad 3D */
+            width: 90%;
+            max-width: 800px;
+        }
+
+        /* Efecto de destello de estrella (Supernova inicial) */
+        #numbers-wrapper::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 5px;
+            height: 5px;
+            background: #fff;
+            border-radius: 50%;
+            box-shadow: 0 0 80px 40px #fff, 0 0 150px 80px #00ffcc;
+            animation: starExplosion 2.5s ease-out forwards;
+            z-index: -1;
+            opacity: 0;
+        }
+
+        /* El contenedor de las bolas se acerca hacia la cámara */
+        #numbers-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+            animation: containerFlyIn 2.5s cubic-bezier(0.1, 1, 0.2, 1) forwards;
+        }
+
+        /* Las bolas en sí */
+        .number-ball {
+            background-color: rgba(0, 0, 0, 0.7); 
+            color: #fff;
+            width: 70px;
+            height: 70px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 50%; 
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            font-size: 1.8rem;
+            font-weight: bold;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(4px); 
+            
+            /* Ocultas al principio, la animación se inyecta por JS */
+            opacity: 0; 
+        }
+
+        /* --- KEYFRAMES DE LAS ANIMACIONES --- */
+        
+        /* Explosión de luz central */
+        @keyframes starExplosion {
+            0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+            10% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+            40% { transform: translate(-50%, -50%) scale(6); opacity: 0.8; }
+            100% { transform: translate(-50%, -50%) scale(10); opacity: 0; }
+        }
+
+        /* El contenedor vuela desde el fondo (Z = -2000px) hasta el frente */
+        @keyframes containerFlyIn {
+            0% { transform: translateZ(-2000px) scale(0.1); }
+            100% { transform: translateZ(0) scale(1); }
+        }
+
+        /* Cada bola se materializa girando y soltando energía */
+        @keyframes ballMaterialize {
+            0% {
+                opacity: 0;
+                transform: scale(0) rotate(720deg);
+                box-shadow: 0 0 100px 50px rgba(0, 255, 204, 0.8);
+                color: transparent;
+            }
+            30% {
+                opacity: 1;
+                color: #fff;
+                box-shadow: 0 0 50px 20px rgba(0, 255, 204, 0.6);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1) rotate(0deg);
+                box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
+                color: #fff;
+            }
         }
     </style>
 </head>
@@ -139,38 +193,34 @@
         <div id="weather-display" class="panel-data">-- °C</div>
     </div>
 
-    <!-- Jugada de la Bonoloto -->
-    <div id="numbers-container"></div>
-    <div id="info-text">Jugada probabilística calculada para el próximo sorteo: <span id="next-draw-date"></span></div>
+    <!-- Envoltorio y Jugada de la Bonoloto -->
+    <div id="numbers-wrapper">
+        <div id="numbers-container"></div>
+    </div>
+    
+    <div id="info-text">Jugada probabilística calculada para el sorteo del: <span id="next-draw-date"></span></div>
 
     <script>
         // --- 1. RELOJ Y FECHA ---
         function updateClockAndDate() {
             const now = new Date();
-            
-            // Fecha
             const dateOptions = { weekday: 'long', year: 'numeric', month: '2-digit', day: '2-digit' };
             const formattedDate = now.toLocaleDateString('es-ES', dateOptions);
             document.getElementById('date-display').innerText = formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1);
-
-            // Reloj
             const timeOptions = { hour: '2-digit', minute: '2-digit', second: '2-digit' };
             document.getElementById('time-display').innerText = now.toLocaleTimeString('es-ES', timeOptions);
         }
         setInterval(updateClockAndDate, 1000);
         updateClockAndDate();
 
-
-        // --- 2. UBICACIÓN Y CLIMA (Usando APIs gratuitas) ---
+        // --- 2. UBICACIÓN Y CLIMA ---
         async function fetchWeatherAndLocation(lat, lon) {
             try {
-                // Obtener ciudad con Nominatim (OpenStreetMap)
                 const geoResponse = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
                 const geoData = await geoResponse.json();
                 const city = geoData.address.city || geoData.address.town || geoData.address.village || geoData.address.state || "Ubicación detectada";
                 document.getElementById('location-display').innerText = city;
 
-                // Obtener clima con Open-Meteo
                 const weatherResponse = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`);
                 const weatherData = await weatherResponse.json();
                 const temp = weatherData.current_weather.temperature;
@@ -183,81 +233,63 @@
 
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    fetchWeatherAndLocation(position.coords.latitude, position.coords.longitude);
-                },
+                (position) => fetchWeatherAndLocation(position.coords.latitude, position.coords.longitude),
                 (error) => {
                     document.getElementById('location-display').innerText = "Permiso denegado";
                     document.getElementById('weather-display').innerText = "Desconocido";
                 }
             );
-        } else {
-            document.getElementById('location-display').innerText = "No soportado";
         }
 
-
-        // --- 3. LÓGICA DE BONOLOTO POR FECHA ---
-        // Generador de números pseudoaleatorios basado en una semilla (Seed)
+        // --- 3. LÓGICA DE BONOLOTO POR FECHA CON ANIMACIÓN ---
         function seededRandom(seed) {
             let x = Math.sin(seed++) * 10000;
             return x - Math.floor(x);
         }
 
         function generateDateBasedBonoloto() {
-            // Obtenemos la fecha de mañana (próximo sorteo)
             const today = new Date();
             const tomorrow = new Date(today);
             tomorrow.setDate(tomorrow.getDate() + 1);
 
-            // Mostramos la fecha del próximo sorteo en el texto inferior
             const tomorrowStr = tomorrow.toLocaleDateString('es-ES');
             document.getElementById('next-draw-date').innerText = tomorrowStr;
 
-            // Creamos una semilla matemática basada en el día, mes y año de mañana
-            // Ejemplo: 16 de Julio de 2026 -> Semilla: 20260716
             let seed = (tomorrow.getFullYear() * 10000) + ((tomorrow.getMonth() + 1) * 100) + tomorrow.getDate();
 
-            // Datos históricos para ponderar
             const numerosCalientes = [33, 10, 34, 2, 22, 11, 23, 31, 3, 19];
             const numerosFrios = [43, 5, 8, 49, 13, 20, 27];
             
             let pool = [];
             for (let i = 1; i <= 49; i++) {
-                if (numerosCalientes.includes(i)) {
-                    pool.push(i, i, i, i); // Más peso
-                } else if (numerosFrios.includes(i)) {
-                    pool.push(i); // Menos peso
-                } else {
-                    pool.push(i, i); // Neutro
-                }
+                if (numerosCalientes.includes(i)) pool.push(i, i, i, i); 
+                else if (numerosFrios.includes(i)) pool.push(i); 
+                else pool.push(i, i); 
             }
 
             let combinacion = new Set(); 
-            
-            // Extraemos los números usando el generador de la fecha
             while (combinacion.size < 6) {
-                // Altera la semilla ligeramente en cada iteración para sacar números distintos
                 seed += 1; 
                 let randomVal = seededRandom(seed);
                 let indiceElegido = Math.floor(randomVal * pool.length);
-                let numeroElegido = pool[indiceElegido];
-                
-                combinacion.add(numeroElegido);
+                combinacion.add(pool[indiceElegido]);
             }
 
             let combinacionOrdenada = Array.from(combinacion).sort((a, b) => a - b);
 
             let htmlContent = '';
-            combinacionOrdenada.forEach(num => {
+            combinacionOrdenada.forEach((num, index) => {
                 let numeroFormateado = num.toString().padStart(2, '0');
-                htmlContent += `<div class="number-ball">${numeroFormateado}</div>`;
+                // MAGIA AQUÍ: Calculamos un retraso para que salgan disparadas una por una
+                let delay = index * 0.3; // 0s, 0.3s, 0.6s...
+                // Se inyecta la animación 'ballMaterialize' con su retraso específico
+                htmlContent += `<div class="number-ball" style="animation: ballMaterialize 1.5s cubic-bezier(0.2, 0.8, 0.2, 1) ${delay}s forwards;">${numeroFormateado}</div>`;
             });
 
             document.getElementById('numbers-container').innerHTML = htmlContent;
         }
 
         generateDateBasedBonoloto();
-
 
         // --- 4. LÓGICA DEL FONDO ESPACIAL ---
         const canvas = document.getElementById('space');
