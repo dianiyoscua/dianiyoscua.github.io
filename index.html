@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title></title>
+    <title>Sorteo Bonoloto Probabilístico</title>
     <style>
         body, html {
             margin: 0;
@@ -15,7 +15,6 @@
             font-family: 'Courier New', Courier, monospace; 
         }
         
-        /* El canvas se queda al fondo */
         canvas {
             display: block;
             width: 100vw;
@@ -26,14 +25,12 @@
             z-index: 1;
         }
 
-        /* Contenedor central para la combinación */
         #numbers-container {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            z-index: 2; /* Por encima de las estrellas */
-            
+            z-index: 2; 
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
@@ -42,7 +39,6 @@
             max-width: 800px;
         }
 
-        /* Estilo de cada bola de la Bonoloto */
         .number-ball {
             background-color: rgba(0, 0, 0, 0.7); 
             color: #fff;
@@ -51,13 +47,32 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            border-radius: 50%; /* Hace que sea un círculo perfecto */
+            border-radius: 50%; 
             border: 2px solid rgba(255, 255, 255, 0.4);
             font-size: 1.8rem;
             font-weight: bold;
             text-shadow: 0 0 10px rgba(255, 255, 255, 0.9); 
             box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
             backdrop-filter: blur(4px); 
+            transition: transform 0.3s;
+        }
+
+        .number-ball:hover {
+            transform: scale(1.1);
+            border-color: #00ffcc;
+            box-shadow: 0 0 20px rgba(0, 255, 204, 0.5);
+        }
+
+        /* Pequeño texto informativo */
+        #info-text {
+            position: absolute;
+            top: 65%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 2;
+            color: rgba(255,255,255,0.5);
+            font-size: 0.9rem;
+            text-align: center;
         }
     </style>
 </head>
@@ -65,39 +80,59 @@
 
     <canvas id="space"></canvas>
 
-    <!-- Contenedor donde aparecerá la combinación de Bonoloto -->
     <div id="numbers-container"></div>
+    <div id="info-text">Generado usando pesos de frecuencia histórica de la Bonoloto</div>
 
     <script>
-        // --- 1. LÓGICA DE LA BONOLOTO ---
-        function generateBonoloto() {
+        // --- 1. LÓGICA DE PROBABILIDAD PONDERADA ---
+        function generateWeightedBonoloto() {
             const container = document.getElementById('numbers-container');
-            let numeros = new Set(); // El Set evita que los números se repitan automáticamente
+            
+            // Datos históricos aproximados de la Bonoloto
+            const numerosCalientes = [33, 10, 34, 2, 22, 11, 23, 31, 3, 19];
+            const numerosFrios = [43, 5, 8, 49, 13, 20, 27];
+            
+            // Creamos una "urna" donde meteremos los números
+            let pool = [];
 
-            // Generamos números aleatorios del 1 al 49 hasta tener exactamente 6
-            while (numeros.size < 6) {
-                let numeroAleatorio = Math.floor(Math.random() * 49) + 1;
-                numeros.add(numeroAleatorio);
+            // Llenamos la urna ajustando la probabilidad (cantidad de tickets)
+            for (let i = 1; i <= 49; i++) {
+                if (numerosCalientes.includes(i)) {
+                    // Los calientes meten 4 tickets en la urna
+                    pool.push(i, i, i, i); 
+                } else if (numerosFrios.includes(i)) {
+                    // Los fríos solo meten 1 ticket en la urna
+                    pool.push(i);
+                } else {
+                    // Los neutros meten 2 tickets en la urna
+                    pool.push(i, i);
+                }
             }
 
-            // Convertimos a un array y los ordenamos de menor a mayor
-            let combinacionOrdenada = Array.from(numeros).sort((a, b) => a - b);
+            let combinacion = new Set(); 
 
-            // Creamos el HTML para cada bola
+            // Sacamos 6 bolas de la urna ponderada
+            while (combinacion.size < 6) {
+                // Elegimos un índice al azar de nuestra urna
+                let indiceAleatorio = Math.floor(Math.random() * pool.length);
+                let numeroElegido = pool[indiceAleatorio];
+                
+                combinacion.add(numeroElegido);
+            }
+
+            // Convertimos y ordenamos de menor a mayor
+            let combinacionOrdenada = Array.from(combinacion).sort((a, b) => a - b);
+
             let htmlContent = '';
             combinacionOrdenada.forEach(num => {
-                // padStart añade un '0' delante si es un número de un solo dígito (ej: 03)
                 let numeroFormateado = num.toString().padStart(2, '0');
                 htmlContent += `<div class="number-ball">${numeroFormateado}</div>`;
             });
 
-            // Mostramos los números en pantalla
             container.innerHTML = htmlContent;
         }
 
-        // Ejecutar al cargar la página
-        generateBonoloto();
-
+        generateWeightedBonoloto();
 
         // --- 2. LÓGICA DEL FONDO ESPACIAL ---
         const canvas = document.getElementById('space');
@@ -119,17 +154,13 @@
         resize();
 
         class Star {
-            constructor() {
-                this.reset();
-            }
-            
+            constructor() { this.reset(); }
             reset() {
                 this.x = (Math.random() - 0.5) * width * 2;
                 this.y = (Math.random() - 0.5) * height * 2;
                 this.z = Math.random() * width;
                 this.pz = this.z;
             }
-            
             update() {
                 this.z -= speed;
                 if (this.z <= 0) {
@@ -138,11 +169,9 @@
                     this.pz = this.z;
                 }
             }
-            
             draw() {
                 let sx = (this.x / this.z) * (width / 2) + width / 2;
                 let sy = (this.y / this.z) * (height / 2) + height / 2;
-                
                 let px = (this.x / this.pz) * (width / 2) + width / 2;
                 let py = (this.y / this.pz) * (height / 2) + height / 2;
                 this.pz = this.z;
