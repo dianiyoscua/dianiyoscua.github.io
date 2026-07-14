@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fondo Espacial Estrellas</title>
+    <title>Sorteo Bonoloto Espacial</title>
     <style>
         body, html {
             margin: 0;
@@ -12,11 +12,52 @@
             height: 100%;
             overflow: hidden;
             background-color: #000;
+            font-family: 'Courier New', Courier, monospace; 
         }
+        
+        /* El canvas se queda al fondo */
         canvas {
             display: block;
             width: 100vw;
             height: 100vh;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        /* Contenedor central para la combinación */
+        #numbers-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 2; /* Por encima de las estrellas */
+            
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+            width: 90%;
+            max-width: 800px;
+        }
+
+        /* Estilo de cada bola de la Bonoloto */
+        .number-ball {
+            background-color: rgba(0, 0, 0, 0.7); 
+            color: #fff;
+            width: 70px;
+            height: 70px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 50%; /* Hace que sea un círculo perfecto */
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            font-size: 1.8rem;
+            font-weight: bold;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.9); 
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(4px); 
         }
     </style>
 </head>
@@ -24,16 +65,49 @@
 
     <canvas id="space"></canvas>
 
+    <!-- Contenedor donde aparecerá la combinación de Bonoloto -->
+    <div id="numbers-container"></div>
+
     <script>
+        // --- 1. LÓGICA DE LA BONOLOTO ---
+        function generateBonoloto() {
+            const container = document.getElementById('numbers-container');
+            let numeros = new Set(); // El Set evita que los números se repitan automáticamente
+
+            // Generamos números aleatorios del 1 al 49 hasta tener exactamente 6
+            while (numeros.size < 6) {
+                let numeroAleatorio = Math.floor(Math.random() * 49) + 1;
+                numeros.add(numeroAleatorio);
+            }
+
+            // Convertimos a un array y los ordenamos de menor a mayor
+            let combinacionOrdenada = Array.from(numeros).sort((a, b) => a - b);
+
+            // Creamos el HTML para cada bola
+            let htmlContent = '';
+            combinacionOrdenada.forEach(num => {
+                // padStart añade un '0' delante si es un número de un solo dígito (ej: 03)
+                let numeroFormateado = num.toString().padStart(2, '0');
+                htmlContent += `<div class="number-ball">${numeroFormateado}</div>`;
+            });
+
+            // Mostramos los números en pantalla
+            container.innerHTML = htmlContent;
+        }
+
+        // Ejecutar al cargar la página
+        generateBonoloto();
+
+
+        // --- 2. LÓGICA DEL FONDO ESPACIAL ---
         const canvas = document.getElementById('space');
         const ctx = canvas.getContext('2d');
 
         let width, height;
         let stars = [];
         
-        // Puedes cambiar la velocidad y cantidad aquí
         const numStars = 800;
-        const speed = 9;
+        const speed = 8;
 
         function resize() {
             width = window.innerWidth;
@@ -90,7 +164,6 @@
         }
 
         function animate() {
-            // Fondo con rastro
             ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
             ctx.fillRect(0, 0, width, height);
 
