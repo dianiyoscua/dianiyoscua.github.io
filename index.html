@@ -3,80 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fondo Espacial en Movimiento</title>
+    <title>Fondo Espacial</title>
     <style>
-        /* === CSS === */
+        /* Reseteo para que ocupe toda la pantalla sin bordes ni scroll */
         body, html {
             margin: 0;
             padding: 0;
             width: 100%;
             height: 100%;
-            overflow: hidden; /* Evita que aparezcan barras de desplazamiento */
-            background-color: #000; /* Fondo negro */
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            color: white;
+            overflow: hidden;
+            background-color: #000;
         }
-
-        /* Posicionamos el canvas al fondo */
-        #spaceCanvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1; 
-        }
-
-        /* Estilos para el contenido de tu web (por encima del canvas) */
-        .contenido {
-            position: relative;
-            z-index: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
+        
+        canvas {
+            display: block;
+            width: 100vw;
             height: 100vh;
-            text-align: center;
-            text-shadow: 2px 2px 8px rgba(0,0,0,0.9);
-        }
-
-        h1 {
-            font-size: 4rem;
-            margin: 0 0 10px 0;
-            letter-spacing: 2px;
-        }
-
-        p {
-            font-size: 1.5rem;
-            color: #d1d5db;
         }
     </style>
 </head>
 <body>
 
-    <!-- === HTML === -->
-    <!-- Este canvas es el que dibuja las estrellas -->
-    <canvas id="spaceCanvas"></canvas>
+    <canvas id="space"></canvas>
 
-    <!-- Aquí va el contenido de tu web -->
-    <div class="contenido">
-        <h1>Tu Proyecto Espacial</h1>
-        <p>El canvas funciona como background inmersivo.</p>
-    </div>
-
-    <!-- === JAVASCRIPT === -->
     <script>
-        const canvas = document.getElementById('spaceCanvas');
+        const canvas = document.getElementById('space');
         const ctx = canvas.getContext('2d');
 
         let width, height;
         let stars = [];
         
-        // ⚙️ VARIABLES PARA PERSONALIZAR EL EFECTO:
-        const numStars = 800;  // Cantidad de estrellas
-        const speed = 8;       // Velocidad a la que te mueves por el espacio
+        // Ajustes del efecto
+        const numStars = 800; // Cantidad de estrellas
+        const speed = 8;      // Velocidad
 
-        // Ajusta el tamaño del canvas al tamaño de la ventana
         function resize() {
             width = window.innerWidth;
             height = window.innerHeight;
@@ -86,25 +46,20 @@
         window.addEventListener('resize', resize);
         resize();
 
-        // Objeto que representa cada estrella
         class Star {
             constructor() {
                 this.reset();
             }
 
-            // Coloca la estrella en un punto aleatorio en 3D
             reset() {
                 this.x = (Math.random() - 0.5) * width * 2;
                 this.y = (Math.random() - 0.5) * height * 2;
                 this.z = Math.random() * width; 
-                this.pz = this.z; // Guarda la profundidad previa para dibujar el rastro
+                this.pz = this.z; 
             }
 
-            // Actualiza la posición acercándola hacia la pantalla
             update() {
                 this.z -= speed;
-                
-                // Si la estrella nos sobrepasa, la volvemos a generar al fondo
                 if (this.z <= 0) {
                     this.reset();
                     this.z = width;
@@ -112,17 +67,14 @@
                 }
             }
 
-            // Dibuja la estrella proyectando 3D a 2D
             draw() {
                 let sx = (this.x / this.z) * (width / 2) + width / 2;
                 let sy = (this.y / this.z) * (height / 2) + height / 2;
 
-                // Calcula la posición del fotograma anterior para crear el efecto de "estela" o raya
                 let px = (this.x / this.pz) * (width / 2) + width / 2;
                 let py = (this.y / this.pz) * (height / 2) + height / 2;
                 this.pz = this.z;
 
-                // El tamaño y la opacidad aumentan a medida que se acerca
                 let r = (1 - this.z / width) * 3;
                 let alpha = 1 - this.z / width;
 
@@ -130,24 +82,20 @@
                 ctx.moveTo(px, py);
                 ctx.lineTo(sx, sy);
                 ctx.lineWidth = r;
-                // Color blanco con opacidad dinámica
                 ctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
                 ctx.stroke();
             }
         }
 
-        // Generamos el array inicial de estrellas
         for (let i = 0; i < numStars; i++) {
             stars.push(new Star());
         }
 
-        // Bucle de animación infinito
         function animate() {
-            // Fondo con un poco de opacidad para que las estrellas dejen rastro suave
+            // El 0.4 crea el efecto de estela al no borrar el fondo por completo
             ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
             ctx.fillRect(0, 0, width, height);
 
-            // Actualizar y dibujar cada estrella
             stars.forEach(star => {
                 star.update();
                 star.draw();
