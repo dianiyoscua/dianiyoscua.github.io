@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>We love you Glu Glu</title>
+    <title>Predicción Bonoloto - Acceso Restringido</title>
     <style>
         body, html {
             margin: 0;
@@ -25,6 +25,88 @@
             left: 0;
             z-index: 1;
         }
+
+        /* --- PANTALLA DE SEGURIDAD --- */
+        #security-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            z-index: 10;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.5s ease;
+        }
+
+        .security-box {
+            text-align: center;
+            padding: 40px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid rgba(0, 255, 204, 0.3);
+            border-radius: 15px;
+            box-shadow: 0 0 30px rgba(0, 255, 204, 0.15);
+        }
+
+        .security-box h2 {
+            margin-top: 0;
+            margin-bottom: 25px;
+            color: #fff;
+            font-size: 1.2rem;
+            letter-spacing: 1px;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+        }
+
+        .security-box input {
+            padding: 12px 15px;
+            font-size: 1.2rem;
+            border-radius: 5px;
+            border: 1px solid #00ffcc;
+            background: rgba(0, 0, 0, 0.5);
+            color: #00ffcc;
+            outline: none;
+            text-align: center;
+            font-family: 'Courier New', Courier, monospace;
+            width: 200px;
+            text-transform: lowercase;
+        }
+
+        .security-box button {
+            display: block;
+            margin: 20px auto 0;
+            padding: 10px 25px;
+            font-size: 1rem;
+            cursor: pointer;
+            background: #00ffcc;
+            color: #000;
+            border: none;
+            border-radius: 5px;
+            font-weight: bold;
+            text-transform: uppercase;
+            transition: all 0.3s;
+        }
+
+        .security-box button:hover {
+            box-shadow: 0 0 15px #00ffcc;
+            transform: scale(1.05);
+        }
+
+        /* Animación de error (temblor) */
+        .error-shake {
+            animation: shake 0.4s;
+        }
+
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            50% { transform: translateX(10px); }
+            75% { transform: translateX(-10px); }
+            100% { transform: translateX(0); }
+        }
+
 
         /* --- Paneles de información (Reloj, Fecha y Clima) --- */
         .info-panel {
@@ -62,9 +144,9 @@
             background: rgba(0,0,0,0.5);
             padding: 5px 15px;
             border-radius: 20px;
-            /* El texto también aparece con un suave retraso */
             animation: fadeInText 4s ease-in forwards;
             opacity: 0;
+            display: none; /* Oculto hasta poner la contraseña */
         }
 
         @keyframes fadeInText {
@@ -73,20 +155,18 @@
         }
 
         /* --- CONTENEDORES DE LA ANIMACIÓN 3D --- */
-        
-        /* Envoltorio que le da la perspectiva 3D al vuelo */
         #numbers-wrapper {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
             z-index: 2;
-            perspective: 1200px; /* Profundidad 3D */
+            perspective: 1200px;
             width: 90%;
             max-width: 800px;
+            display: none; /* Oculto hasta poner la contraseña */
         }
 
-        /* Efecto de destello de estrella (Supernova inicial) */
         #numbers-wrapper::before {
             content: '';
             position: absolute;
@@ -103,7 +183,6 @@
             opacity: 0;
         }
 
-        /* El contenedor de las bolas se acerca hacia la cámara */
         #numbers-container {
             display: flex;
             flex-wrap: wrap;
@@ -112,7 +191,6 @@
             animation: containerFlyIn 2.5s cubic-bezier(0.1, 1, 0.2, 1) forwards;
         }
 
-        /* Las bolas en sí */
         .number-ball {
             background-color: rgba(0, 0, 0, 0.7); 
             color: #fff;
@@ -127,14 +205,9 @@
             font-weight: bold;
             box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
             backdrop-filter: blur(4px); 
-            
-            /* Ocultas al principio, la animación se inyecta por JS */
             opacity: 0; 
         }
 
-        /* --- KEYFRAMES DE LAS ANIMACIONES --- */
-        
-        /* Explosión de luz central */
         @keyframes starExplosion {
             0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
             10% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
@@ -142,13 +215,11 @@
             100% { transform: translate(-50%, -50%) scale(10); opacity: 0; }
         }
 
-        /* El contenedor vuela desde el fondo (Z = -2000px) hasta el frente */
         @keyframes containerFlyIn {
             0% { transform: translateZ(-2000px) scale(0.1); }
             100% { transform: translateZ(0) scale(1); }
         }
 
-        /* Cada bola se materializa girando y soltando energía */
         @keyframes ballMaterialize {
             0% {
                 opacity: 0;
@@ -175,6 +246,15 @@
     <!-- Fondo de estrellas -->
     <canvas id="space"></canvas>
 
+    <!-- PANTALLA DE SEGURIDAD -->
+    <div id="security-screen">
+        <div class="security-box" id="security-box">
+            <h2>¿Este es el planeta de los...?</h2>
+            <input type="password" id="password-input" placeholder="..." autocomplete="off">
+            <button onclick="checkPassword()">Acceder</button>
+        </div>
+    </div>
+
     <!-- Panel Superior Izquierdo: Fecha y Reloj -->
     <div id="top-left-panel" class="info-panel">
         <div class="panel-title">Fecha Local</div>
@@ -193,7 +273,7 @@
         <div id="weather-display" class="panel-data">-- °C</div>
     </div>
 
-    <!-- Envoltorio y Jugada de la Bonoloto -->
+    <!-- Envoltorio y Jugada de la Bonoloto (Ocultos al inicio) -->
     <div id="numbers-wrapper">
         <div id="numbers-container"></div>
     </div>
@@ -201,6 +281,45 @@
     <div id="info-text">Jugada probabilística calculada para el sorteo del: <span id="next-draw-date"></span></div>
 
     <script>
+        // --- 0. SISTEMA DE SEGURIDAD ---
+        function checkPassword() {
+            const input = document.getElementById('password-input');
+            const password = input.value.trim().toLowerCase();
+            const securityBox = document.getElementById('security-box');
+            const securityScreen = document.getElementById('security-screen');
+
+            if (password === 'mimisos') {
+                // Contraseña correcta: Desvanecer pantalla y mostrar números
+                securityScreen.style.opacity = '0';
+                
+                setTimeout(() => {
+                    securityScreen.style.display = 'none';
+                    document.getElementById('numbers-wrapper').style.display = 'block';
+                    document.getElementById('info-text').style.display = 'block';
+                    
+                    // Disparamos la generación y la animación de los números AHORA
+                    generateDateBasedBonoloto();
+                }, 500); // Espera medio segundo a que termine el desvanecimiento
+            } else {
+                // Contraseña incorrecta: Animación de temblor
+                securityBox.classList.add('error-shake');
+                input.value = ''; // Limpiamos el campo
+                
+                // Quitamos la clase de temblor rápido para que se pueda volver a activar si falla de nuevo
+                setTimeout(() => {
+                    securityBox.classList.remove('error-shake');
+                }, 400);
+            }
+        }
+
+        // Permitir enviar con la tecla Enter
+        document.getElementById('password-input').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                checkPassword();
+            }
+        });
+
+
         // --- 1. RELOJ Y FECHA ---
         function updateClockAndDate() {
             const now = new Date();
@@ -280,16 +399,16 @@
             let htmlContent = '';
             combinacionOrdenada.forEach((num, index) => {
                 let numeroFormateado = num.toString().padStart(2, '0');
-                // MAGIA AQUÍ: Calculamos un retraso para que salgan disparadas una por una
-                let delay = index * 0.3; // 0s, 0.3s, 0.6s...
-                // Se inyecta la animación 'ballMaterialize' con su retraso específico
+                let delay = index * 0.3; // Retraso escalonado para la animación
                 htmlContent += `<div class="number-ball" style="animation: ballMaterialize 1.5s cubic-bezier(0.2, 0.8, 0.2, 1) ${delay}s forwards;">${numeroFormateado}</div>`;
             });
 
             document.getElementById('numbers-container').innerHTML = htmlContent;
         }
 
-        generateDateBasedBonoloto();
+        // Nota: Ya NO llamamos a generateDateBasedBonoloto() aquí abajo.
+        // Ahora se llama solo cuando la contraseña es correcta en la función checkPassword()
+
 
         // --- 4. LÓGICA DEL FONDO ESPACIAL ---
         const canvas = document.getElementById('space');
