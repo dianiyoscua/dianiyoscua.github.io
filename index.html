@@ -44,24 +44,26 @@
 
         .security-box {
             text-align: center;
-            padding: 40px;
+            padding: 30px;
             background: rgba(0, 0, 0, 0.8);
             border: 1px solid rgba(0, 255, 204, 0.3);
             border-radius: 15px;
             box-shadow: 0 0 30px rgba(0, 255, 204, 0.15);
+            width: 85%;
+            max-width: 350px;
         }
 
         .security-box h2 {
             margin-top: 0;
             margin-bottom: 25px;
             color: #fff;
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             letter-spacing: 1px;
             text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
         }
 
         .security-box input {
-            padding: 12px 15px;
+            padding: 12px;
             font-size: 1.2rem;
             border-radius: 5px;
             border: 1px solid #00ffcc;
@@ -70,7 +72,8 @@
             outline: none;
             text-align: center;
             font-family: 'Courier New', Courier, monospace;
-            width: 200px;
+            width: 100%;
+            box-sizing: border-box;
             text-transform: lowercase;
         }
 
@@ -89,14 +92,7 @@
             transition: all 0.3s;
         }
 
-        .security-box button:hover {
-            box-shadow: 0 0 15px #00ffcc;
-            transform: scale(1.05);
-        }
-
-        .error-shake {
-            animation: shake 0.4s;
-        }
+        .error-shake { animation: shake 0.4s; }
 
         @keyframes shake {
             0% { transform: translateX(0); }
@@ -106,8 +102,7 @@
             100% { transform: translateX(0); }
         }
 
-
-        /* --- Paneles de información --- */
+        /* --- PANELES DE INFORMACIÓN (Reloj, Clima) --- */
         .info-panel {
             position: absolute;
             z-index: 3;
@@ -122,47 +117,39 @@
         #top-left-panel { top: 20px; left: 20px; }
         #top-right-panel { top: 20px; right: 20px; text-align: right; }
 
+        .info-block { margin-bottom: 12px; }
+        .info-block:last-child { margin-bottom: 0; }
+
         .panel-title {
             font-size: 0.8rem;
             color: rgba(255, 255, 255, 0.5);
-            margin-bottom: 5px;
+            margin-bottom: 3px;
             text-transform: uppercase;
             letter-spacing: 1px;
         }
-        .panel-data { font-size: 1.2rem; font-weight: bold; }
+        .panel-data { font-size: 1.1rem; font-weight: bold; }
 
-        #info-text {
-            position: absolute;
-            top: 65%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 2;
-            color: rgba(255,255,255,0.6);
-            font-size: 0.9rem;
-            text-align: center;
-            background: rgba(0,0,0,0.5);
-            padding: 5px 15px;
-            border-radius: 20px;
-            animation: fadeInText 4s ease-in forwards;
-            opacity: 0;
-            display: none; 
-        }
 
-        @keyframes fadeInText {
-            80% { opacity: 0; }
-            100% { opacity: 1; }
-        }
-
-        /* --- CONTENEDORES DE LA ANIMACIÓN 3D --- */
-        #numbers-wrapper {
+        /* --- CONTENEDOR CENTRAL (Números y Texto) --- */
+        /* Al usar flex-direction: column, texto y números nunca se pisan */
+        #center-content {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            z-index: 2;
-            perspective: 1200px;
             width: 90%;
             max-width: 800px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 35px; /* Separación fija entre bolas y texto */
+            z-index: 2;
+        }
+
+        #numbers-wrapper {
+            position: relative;
+            perspective: 1200px;
+            width: 100%;
             display: none; 
         }
 
@@ -207,36 +194,73 @@
             opacity: 0; 
         }
 
+        #info-text {
+            color: rgba(255,255,255,0.7);
+            font-size: 0.95rem;
+            text-align: center;
+            background: rgba(0,0,0,0.5);
+            padding: 8px 20px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            animation: fadeInText 4s ease-in forwards;
+            opacity: 0;
+            display: none; 
+        }
+
+        /* --- ANIMACIONES --- */
+        @keyframes fadeInText { 80% { opacity: 0; } 100% { opacity: 1; } }
         @keyframes starExplosion {
             0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
             10% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
             40% { transform: translate(-50%, -50%) scale(6); opacity: 0.8; }
             100% { transform: translate(-50%, -50%) scale(10); opacity: 0; }
         }
-
         @keyframes containerFlyIn {
             0% { transform: translateZ(-2000px) scale(0.1); }
             100% { transform: translateZ(0) scale(1); }
         }
-
         @keyframes ballMaterialize {
-            0% {
-                opacity: 0;
-                transform: scale(0) rotate(720deg);
-                box-shadow: 0 0 100px 50px rgba(0, 255, 204, 0.8);
-                color: transparent;
+            0% { opacity: 0; transform: scale(0) rotate(720deg); box-shadow: 0 0 100px 50px rgba(0, 255, 204, 0.8); color: transparent; }
+            30% { opacity: 1; color: #fff; box-shadow: 0 0 50px 20px rgba(0, 255, 204, 0.6); }
+            100% { opacity: 1; transform: scale(1) rotate(0deg); box-shadow: 0 0 15px rgba(255, 255, 255, 0.2); color: #fff; }
+        }
+
+        /* ========================================= */
+        /* 📱 MODO MÓVIL (Responsividad)             */
+        /* ========================================= */
+        @media (max-width: 650px) {
+            /* Transformar paneles laterales en barras horizontales apiladas */
+            .info-panel {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 10px 15px;
+                left: 10px !important;
+                right: 10px !important;
+                width: auto;
             }
-            30% {
-                opacity: 1;
-                color: #fff;
-                box-shadow: 0 0 50px 20px rgba(0, 255, 204, 0.6);
+            #top-left-panel { top: 10px; text-align: left; }
+            #top-right-panel { top: 75px; text-align: left; }
+            
+            .info-block { margin-bottom: 0; text-align: left; }
+            .info-block:last-child { text-align: right; }
+            
+            .panel-data { font-size: 0.95rem; }
+            .panel-title { font-size: 0.65rem; }
+
+            /* Bajar el contenido central para que no choque con los paneles */
+            #center-content { top: 60%; gap: 25px; }
+
+            /* Reducir tamaño de las bolas */
+            .number-ball {
+                width: 55px;
+                height: 55px;
+                font-size: 1.4rem;
             }
-            100% {
-                opacity: 1;
-                transform: scale(1) rotate(0deg);
-                box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
-                color: #fff;
-            }
+            #numbers-container { gap: 12px; }
+            
+            /* Ajustar texto inferior */
+            #info-text { font-size: 0.8rem; padding: 8px 15px; }
         }
     </style>
 </head>
@@ -254,30 +278,39 @@
         </div>
     </div>
 
-    <!-- Panel Superior Izquierdo: Fecha y Reloj -->
+    <!-- Panel Izquierdo: Fecha y Reloj -->
     <div id="top-left-panel" class="info-panel">
-        <div class="panel-title">Fecha Local</div>
-        <div id="date-display" class="panel-data">Cargando...</div>
-        <div style="margin-top: 10px;"></div>
-        <div class="panel-title">Reloj Local</div>
-        <div id="time-display" class="panel-data">--:--:--</div>
+        <div class="info-block">
+            <div class="panel-title">Fecha Local</div>
+            <div id="date-display" class="panel-data">Cargando...</div>
+        </div>
+        <div class="info-block">
+            <div class="panel-title">Reloj Local</div>
+            <div id="time-display" class="panel-data">--:--:--</div>
+        </div>
     </div>
 
-    <!-- Panel Superior Derecho: Ubicación y Clima -->
+    <!-- Panel Derecho: Ubicación y Clima -->
     <div id="top-right-panel" class="info-panel">
-        <div class="panel-title">Ubicación</div>
-        <div id="location-display" class="panel-data">Buscando...</div>
-        <div style="margin-top: 10px;"></div>
-        <div class="panel-title">Clima Actual</div>
-        <div id="weather-display" class="panel-data">-- °C</div>
+        <div class="info-block">
+            <div class="panel-title">Ubicación</div>
+            <div id="location-display" class="panel-data">Buscando...</div>
+        </div>
+        <div class="info-block">
+            <div class="panel-title">Clima Actual</div>
+            <div id="weather-display" class="panel-data">-- °C</div>
+        </div>
     </div>
 
-    <!-- Envoltorio y Jugada de la Bonoloto -->
-    <div id="numbers-wrapper">
-        <div id="numbers-container"></div>
+    <!-- Contenedor unificado para que no se solapen elementos -->
+    <div id="center-content">
+        <!-- Jugada de la Bonoloto -->
+        <div id="numbers-wrapper">
+            <div id="numbers-container"></div>
+        </div>
+        <!-- Texto inferior -->
+        <div id="info-text">Jugada probabilística para el sorteo del: <span id="next-draw-date"></span></div>
     </div>
-    
-    <div id="info-text">Jugada probabilística calculada para el sorteo del: <span id="next-draw-date"></span></div>
 
     <script>
         // --- 0. SISTEMA DE SEGURIDAD ---
@@ -298,16 +331,13 @@
             } else {
                 securityBox.classList.add('error-shake');
                 input.value = ''; 
-                setTimeout(() => {
-                    securityBox.classList.remove('error-shake');
-                }, 400);
+                setTimeout(() => { securityBox.classList.remove('error-shake'); }, 400);
             }
         }
 
         document.getElementById('password-input').addEventListener('keypress', function (e) {
             if (e.key === 'Enter') checkPassword();
         });
-
 
         // --- 1. RELOJ Y FECHA ---
         function updateClockAndDate() {
@@ -321,11 +351,9 @@
         setInterval(updateClockAndDate, 1000);
         updateClockAndDate();
 
-
-        // --- 2. UBICACIÓN Y CLIMA (NUEVO MÉTODO POR IP) ---
+        // --- 2. UBICACIÓN Y CLIMA POR IP ---
         async function fetchWeatherAndLocation() {
             try {
-                // Obtenemos la ubicación basada en la IP del usuario (sin pedir permisos)
                 const geoResponse = await fetch('https://get.geojs.io/v1/ip/geo.json');
                 const geoData = await geoResponse.json();
                 
@@ -335,24 +363,19 @@
                 
                 document.getElementById('location-display').innerText = city;
 
-                // Obtenemos el clima con esas coordenadas
                 const weatherResponse = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`);
                 const weatherData = await weatherResponse.json();
                 const temp = weatherData.current_weather.temperature;
                 
                 document.getElementById('weather-display').innerText = `${temp} °C`;
             } catch (error) {
-                // Si algo falla, mostramos esto en lugar de dejarlo cargando
-                document.getElementById('location-display').innerText = "Ubicación oculta";
+                document.getElementById('location-display').innerText = "Oculto";
                 document.getElementById('weather-display').innerText = "-- °C";
             }
         }
-        
-        // Ejecutamos la búsqueda al iniciar
         fetchWeatherAndLocation();
 
-
-        // --- 3. LÓGICA DE BONOLOTO POR FECHA CON ANIMACIÓN ---
+        // --- 3. LÓGICA DE BONOLOTO POR FECHA ---
         function seededRandom(seed) {
             let x = Math.sin(seed++) * 10000;
             return x - Math.floor(x);
@@ -363,8 +386,7 @@
             const tomorrow = new Date(today);
             tomorrow.setDate(tomorrow.getDate() + 1);
 
-            const tomorrowStr = tomorrow.toLocaleDateString('es-ES');
-            document.getElementById('next-draw-date').innerText = tomorrowStr;
+            document.getElementById('next-draw-date').innerText = tomorrow.toLocaleDateString('es-ES');
 
             let seed = (tomorrow.getFullYear() * 10000) + ((tomorrow.getMonth() + 1) * 100) + tomorrow.getDate();
 
@@ -386,22 +408,18 @@
                 combinacion.add(pool[indiceElegido]);
             }
 
-            let combinacionOrdenada = Array.from(combinacion).sort((a, b) => a - b);
-
             let htmlContent = '';
-            combinacionOrdenada.forEach((num, index) => {
-                let numeroFormateado = num.toString().padStart(2, '0');
+            Array.from(combinacion).sort((a, b) => a - b).forEach((num, index) => {
                 let delay = index * 0.3; 
-                htmlContent += `<div class="number-ball" style="animation: ballMaterialize 1.5s cubic-bezier(0.2, 0.8, 0.2, 1) ${delay}s forwards;">${numeroFormateado}</div>`;
+                htmlContent += `<div class="number-ball" style="animation: ballMaterialize 1.5s cubic-bezier(0.2, 0.8, 0.2, 1) ${delay}s forwards;">${num.toString().padStart(2, '0')}</div>`;
             });
 
             document.getElementById('numbers-container').innerHTML = htmlContent;
         }
 
-        // --- 4. LÓGICA DEL FONDO ESPACIAL ---
+        // --- 4. FONDO ESPACIAL ---
         const canvas = document.getElementById('space');
         const ctx = canvas.getContext('2d');
-
         let width, height;
         let stars = [];
         const numStars = 800;
@@ -451,22 +469,14 @@
             }
         }
 
-        for (let i = 0; i < numStars; i++) {
-            stars.push(new Star());
-        }
+        for (let i = 0; i < numStars; i++) stars.push(new Star());
 
         function animate() {
             ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
             ctx.fillRect(0, 0, width, height);
-
-            stars.forEach(star => {
-                star.update();
-                star.draw();
-            });
-
+            stars.forEach(star => { star.update(); star.draw(); });
             requestAnimationFrame(animate);
         }
-
         animate();
     </script>
 </body>
