@@ -19,10 +19,27 @@
     </style>
 </head>
 <body>
-    
-    <!-- Audio oculto de fondo -->
+        <!-- Audio oculto de fondo -->
     <!-- 'autoplay' hace que inicie al abrir la web, 'loop' hace que se repita sin fin -->
-    <audio src="jurassic.mp3" autoplay loop muted></audio>
+    <audio id="miAudio" src="jurassic.mp3" autoplay loop muted></audio>
+    <scrip>
+    const audio = document.getElementById('miAudio');
+
+// En cuanto el usuario haga cualquier interacción, quitamos el mute
+function activarSonido() {
+  audio.muted = false;
+  audio.play();
+  document.removeEventListener('click', activarSonido);
+  document.removeEventListener('keydown', activarSonido);
+  document.removeEventListener('touchstart', activarSonido);
+}
+
+document.addEventListener('click', activarSonido);
+document.addEventListener('keydown', activarSonido);
+document.addEventListener('touchstart', activarSonido);
+        </scrip>
+    
+
 
 </body>
 </html>
